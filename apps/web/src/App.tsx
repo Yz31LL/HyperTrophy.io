@@ -2,10 +2,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { OnboardingScreen } from './pages/onboarding/OnboardingScreen'
 import { LoginScreen } from './pages/auth/LoginScreen'
 import { SignUpScreen } from './pages/auth/SignUpScreen'
+import { DashboardScreen } from './pages/dashboard/DashboardScreen'
 import { useAuth } from './providers/AuthProvider'
-import { Header } from '@repo/ui/Header'
-import { Button } from '@repo/ui/Button'
-import { auth } from './lib/firebase'
+
 
 // A wrapper to protect routes that require login
 function ProtectedRoute({ children }: { children: JSX.Element }) {
@@ -19,26 +18,7 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
   return children
 }
 
-// A simple Dashboard for Phase 1
-function Dashboard() {
-  const { user } = useAuth()
 
-  return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <Header title="Dashboard" />
-      <div className="text-center mt-8 space-y-4">
-        <p className="text-xl">
-          Welcome back, <strong>{user?.displayName || user?.email}</strong>!
-        </p>
-        <p className="text-muted-foreground">User ID: {user?.uid}</p>
-
-        <Button variant="destructive" onClick={() => auth.signOut()}>
-          Sign Out
-        </Button>
-      </div>
-    </div>
-  )
-}
 
 export function App() {
   return (
@@ -54,17 +34,15 @@ export function App() {
             <OnboardingScreen />
           </ProtectedRoute>
         } />
-        
-        {/* Protected Routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
 
+        {/* Protected Routes */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <DashboardScreen />
+          </ProtectedRoute>
+        } />
+
+    
         {/* Default Redirect */}
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>

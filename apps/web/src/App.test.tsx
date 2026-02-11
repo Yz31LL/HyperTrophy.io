@@ -1,60 +1,37 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen } from '@testing-library/react'
 import { App } from './App'
 
-describe('App', () => {
-  it('renders the header with title', () => {
+// Mock the Auth Context
+// We simulate a user who is NOT logged in
+vi.mock('./providers/AuthProvider', () => ({
+  useAuth: () => ({
+    user: null,
+    loading: false,
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
+// Mock the Firebase imports so we don't try to connect during tests
+vi.mock('./lib/firebase', () => ({
+  auth: {},
+  db: {},
+}))
+
+describe('App Routing', () => {
+  it('redirects to login screen by default', () => {
     render(<App />)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('The Hytel Way')
+
+    // Check if the Login Screen title is visible
+    expect(screen.getByText('Welcome Back')).toBeInTheDocument()
+
+    // Check if the Sign In button is present
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
   })
 
-  it('renders the counter with initial value of 0', () => {
+  it('renders the sign up link', () => {
     render(<App />)
-    expect(screen.getByText('0')).toBeInTheDocument()
-  })
-
-  it('increments the counter when clicking increase button', () => {
-    render(<App />)
-    const increaseButton = screen.getByRole('button', { name: /increment counter/i })
-    fireEvent.click(increaseButton)
-    expect(screen.getByText('1')).toBeInTheDocument()
-  })
-
-  it('decrements the counter when clicking decrease button', () => {
-    render(<App />)
-    const decreaseButton = screen.getByRole('button', { name: /decrement counter/i })
-    fireEvent.click(decreaseButton)
-    expect(screen.getByText('-1')).toBeInTheDocument()
-  })
-
-  it('resets counter to zero when clicking reset button', () => {
-    render(<App />)
-    const increaseButton = screen.getByRole('button', { name: /increment counter/i })
-    const resetButton = screen.getByRole('button', { name: /reset/i })
-
-    // Increment a few times
-    fireEvent.click(increaseButton)
-    fireEvent.click(increaseButton)
-    expect(screen.getByText('2')).toBeInTheDocument()
-
-    // Reset
-    fireEvent.click(resetButton)
-    expect(screen.getByText('0')).toBeInTheDocument()
-  })
-
-  it('renders the stack overview card', () => {
-    render(<App />)
-    expect(screen.getByText('Stack Overview', { exact: false })).toBeInTheDocument()
-  })
-
-  it('renders the monorepo structure card', () => {
-    render(<App />)
-    expect(screen.getByText('Monorepo Structure', { exact: false })).toBeInTheDocument()
-  })
-
-  it('renders Vite and React logos', () => {
-    render(<App />)
-    expect(screen.getByAltText('Vite logo')).toBeInTheDocument()
-    expect(screen.getByAltText('React logo')).toBeInTheDocument()
+    expect(screen.getByText("Don't have an account?")).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /sign up/i })).toBeInTheDocument()
   })
 })

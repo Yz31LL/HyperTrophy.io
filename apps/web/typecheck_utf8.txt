@@ -1,0 +1,9 @@
+﻿
+> web@0.0.0 typecheck
+> tsc --noEmit
+
+src/pages/onboarding/OnboardingScreen.tsx(83,34): error TS2345: Argument of type '{ gender: "male" | "female"; age: number; height: number; weight: number; activityLevel: "sedentary" | "light" | "moderate" | "heavy" | "athlete"; goal: "lose_weight" | "maintain" | "gain_muscle"; archetype?: "bodybuilder" | ... 4 more ... | undefined; dietaryPreference?: "standard" | ... 3 more ... | undefined; }' is not assignable to parameter of type '{ gender: "male" | "female"; age: number; height: number; weight: number; activityLevel: "sedentary" | "light" | "moderate" | "heavy" | "athlete"; goal: "lose_weight" | "maintain" | "gain_muscle"; archetype: "bodybuilder" | ... 3 more ... | "general"; dietaryPreference: "standard" | ... 2 more ... | "keto"; }'.
+  Types of property 'archetype' are incompatible.
+    Type '"bodybuilder" | "fighter" | "crossfitter" | "senior" | "general" | undefined' is not assignable to type '"bodybuilder" | "fighter" | "crossfitter" | "senior" | "general"'.
+      Type 'undefined' is not assignable to type '"bodybuilder" | "fighter" | "crossfitter" | "senior" | "general"'.
+src/pages/onboarding/OnboardingScreen.tsx(86,40): error TS2345: Argument of type '{ gender: "male" | "female"; age: number; height: number; weight: number; activityLevel: "sedentary" | "light" | "moderate" | "heavy" | "athlete"; goal: "lose_weight" | "maintain" | "gain_muscle"; archetype?: "bodybuilder" | ... 4 more ... | undefined; dietaryPreference?: "standard" | ... 3 more ... | undefined; }' is not assignable to parameter of type '{ gender: "male" | "female"; age: number; height: number; weight: number; activityLevel: "sedentary" | "light" | "moderate" | "heavy" | "athlete"; goal: "lose_weight" | "maintain" | "gain_muscle"; archetype: "bodybuilder" | ... 3 more ... | "general"; dietaryPreference: "standard" | ... 2 more ... | "keto"; }'.

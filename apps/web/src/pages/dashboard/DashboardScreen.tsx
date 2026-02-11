@@ -1,11 +1,16 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../providers/AuthProvider'
 import { useProfile } from '../../hooks/useProfile'
-import { Header } from '@repo/ui/Header'
 import { Button } from '@repo/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/Card'
-import { Activity, Flame, Droplets, Dumbbell } from 'lucide-react'
-import { calculateBMR, calculateTDEE, calculateTargetCalories, calculateMacros } from '../../lib/health-calc'
+import { Activity, Flame, Dumbbell } from 'lucide-react'
+import {
+  calculateBMR,
+  calculateTDEE,
+  calculateTargetCalories,
+  calculateMacros,
+} from '../../lib/health-calc'
+import { WeightChart } from './WeightChart'
 import { auth } from '../../lib/firebase'
 
 export function DashboardScreen() {
@@ -40,7 +45,9 @@ export function DashboardScreen() {
           <h1 className="text-2xl font-bold">Hi, {user?.displayName}</h1>
           <p className="text-muted-foreground">Today's Targets</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => auth.signOut()}>Sign Out</Button>
+        <Button variant="outline" size="sm" onClick={() => auth.signOut()}>
+          Sign Out
+        </Button>
       </div>
 
       {/* Primary Stats Row */}
@@ -85,6 +92,11 @@ export function DashboardScreen() {
         </Card>
       </div>
 
+      {/* NEW: Weight Chart */}
+      <div className="w-full">
+        <WeightChart />
+      </div>
+
       {/* Actions Grid */}
       <div className="grid md:grid-cols-2 gap-6">
         <Card className="border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/20">
@@ -95,8 +107,12 @@ export function DashboardScreen() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">Track your sets, reps, and RPE for today.</p>
-            <Button className="w-full" disabled>Coming in Phase 3</Button>
+            <p className="text-sm text-muted-foreground mb-4">
+              Track your sets, reps, and RPE for today.
+            </p>
+            <Button className="w-full" disabled>
+              Coming in Phase 3
+            </Button>
           </CardContent>
         </Card>
 
@@ -108,8 +124,12 @@ export function DashboardScreen() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">Track your meals against your macro targets.</p>
-            <Button className="w-full" variant="outline" disabled>Coming in Phase 3</Button>
+            <p className="text-sm text-muted-foreground mb-4">
+              Track your meals against your macro targets.
+            </p>
+            <Button className="w-full" variant="outline" disabled>
+              Coming in Phase 3
+            </Button>
           </CardContent>
         </Card>
       </div>

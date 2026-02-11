@@ -16,23 +16,23 @@ Here is a comprehensive **ToDo.md** file tailored to your architecture (React Na
 
 _Goal: Get a user signed in and their "Initial State" secured in the database._
 
-- [ ] **Project Setup**
-- [ ] Initialize React Native project (Expo recommended for speed).
-- [ ] Set up TypeScript configuration (`tsconfig.json`).
-- [ ] Install core dependencies (`firebase`, `react-navigation`, `react-native-safe-area-context`).
-- [ ] Configure ESLint & Prettier.
+- [x] **Project Setup**
+- [x] Initialize React Native project (Note: Using Vite/Web Monorepo).
+- [x] Set up TypeScript configuration (`tsconfig.json`).
+- [x] Install core dependencies (`firebase`, `lucide-react`, `react-router-dom`).
+- [x] Configure ESLint & Prettier.
 
-- [ ] **Firebase Configuration**
-- [ ] Create Firebase Project in Console.
-- [ ] Enable **Authentication** (Email/Password, Google).
-- [ ] Enable **Firestore Database** (Start in Test Mode).
-- [ ] Add `firebaseConfig` to environment variables (`.env`).
+- [x] **Firebase Configuration**
+- [x] Create Firebase Project in Console.
+- [x] Enable **Authentication** (Email/Password, Google).
+- [x] Enable **Firestore Database** (Start in Test Mode).
+- [x] Add `firebaseConfig` to environment variables (`.env`).
 
-- [ ] **Authentication Flow**
-- [ ] Build `LoginScreen` (Email/Pass inputs).
-- [ ] Build `SignUpScreen` (Create account).
-- [ ] Implement `AuthContext` (Global state for user session).
-- [ ] Create Protected Routes (Redirect unauthenticated users to Login).
+- [x] **Authentication Flow**
+- [x] Build `LoginScreen` (Email/Pass inputs).
+- [x] Build `SignUpScreen` (Create account).
+- [x] Implement `AuthContext` (Global state for user session).
+- [x] Create Protected Routes (Redirect unauthenticated users to Login).
 
 ---
 
@@ -40,24 +40,24 @@ _Goal: Get a user signed in and their "Initial State" secured in the database._
 
 _Goal: Capture biometrics and generate the "Verified Plan" (No AI)._
 
-- [ ] **Profile Data Modeling**
-- [ ] Create `UserProfile` interface (Height, Weight, Age, Gender, Activity Level).
-- [ ] Build **Onboarding Wizard** (Multi-step form).
-- [ ] Step 1: Biometrics.
-- [ ] Step 2: Goal Selection (Lose Weight, Hypertrophy, etc.).
-- [ ] Step 3: Medical Flags (Injuries/Allergies).
+- [x] **Profile Data Modeling**
+- [x] Create `UserProfile` interface (Height, Weight, Age, Gender, Activity Level).
+- [x] Build **Onboarding Wizard** (Multi-step form).
+- [x] Step 1: Biometrics.
+- [x] Step 2: Goal Selection (Lose Weight, Hypertrophy, etc.).
+- [x] Step 3: Medical Flags (Injuries/Allergies).
+- [x] Save data to `users/{uid}/private_profile`.
 
-- [ ] Save data to `users/{uid}/private_profile`.
-
-- [ ] **The "No AI" Logic Engine (`health-calc.ts`)**
-- [ ] Implement **Mifflin-St Jeor** Equation (BMR Calculation).
-- [ ] Implement **TDEE Multiplier** logic (Activity Level).
-- [ ] Implement **Macro Splitter** (e.g., if `Bodybuilder` -> 40% Protein).
+- [x] **The "No AI" Logic Engine (`health-calc.ts`)**
+- [x] Implement **Mifflin-St Jeor** Equation (BMR Calculation).
+- [x] Implement **TDEE Multiplier** logic (Activity Level).
+- [x] Implement **Macro Splitter** (e.g., if `Bodybuilder` -> 40% Protein).
+- [ ] **Feature:** Support Primary Archetypes (Bodybuilder, Fighter, Senior, CrossFitter) in logic.
 - [ ] **Unit Test:** Verify math against known medical examples (Ensure accuracy).
 
-- [ ] **Dashboard (Trainee View)**
-- [ ] Fetch User Profile on load.
-- [ ] Display "Daily Targets" (Calories, Protein, Water).
+- [x] **Dashboard (Trainee View)**
+- [x] Fetch User Profile on load.
+- [x] Display "Daily Targets" (Calories, Protein, Water).
 - [ ] Build "Weight Tracker" graph (Simple Line Chart).
 
 ---
@@ -125,10 +125,10 @@ _Goal: The Dual-Sided Marketplace features._
 
 _Goal: Production readiness._
 
-- [ ] **Firestore Security Rules**
-- [ ] Lock down `users` collection (Owner only).
-- [ ] Allow Trainers `read` access to linked Trainees.
-- [ ] Validate data types (e.g., `allow create: if request.resource.data.weight > 0`).
+- [x] **Firestore Security Rules**
+- [x] Lock down `users` collection (Owner only).
+- [x] Allow Trainers `read` access to linked Trainees (Note: Trainer role defined but marketplace relationships pending).
+- [x] Validate data types (Basic validation implemented in rules).
 
 - [ ] **Offline Persistence**
 - [ ] Enable Firestore Offline Persistence.

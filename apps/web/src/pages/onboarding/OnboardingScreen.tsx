@@ -53,18 +53,22 @@ export function OnboardingScreen() {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<UserProfile>({
-    resolver: zodResolver(UserProfileSchema),
+    resolver: zodResolver(UserProfileSchema) as import('react-hook-form').Resolver<UserProfile>,
     defaultValues: {
       gender: 'male',
+      age: 25,
+      height: 170,
+      weight: 70,
       activityLevel: 'sedentary',
       goal: 'maintain',
       dietaryPreference: 'standard',
+      archetype: 'general',
     },
     mode: 'onChange',
   })
 
   // Watch values for real-time preview if needed
-  const formData = watch()
+  const formData = watch() as UserProfile
 
   const handleNext = async () => {
     let fieldsToValidate: (keyof UserProfile)[] = []
@@ -90,39 +94,41 @@ export function OnboardingScreen() {
   const handleBack = () => setStep(s => s - 1)
 
   const onSubmit = async (data: UserProfile) => {
-  if (!auth.currentUser) return
+    if (!auth.currentUser) return
 
-  try {
-    const uid = auth.currentUser.uid
-    
+    try {
+      const uid = auth.currentUser.uid
 
-    const userRef = doc(db, 'users', uid)
-    
+      const userRef = doc(db, 'users', uid)
 
-    const profileRef = doc(db, 'users', uid, 'private_profile', 'main')
-    
-    await setDoc(userRef, {
-      uid: uid,
-      email: auth.currentUser.email,
-      displayName: auth.currentUser.displayName,
-      role: 'trainee', 
-      updatedAt: serverTimestamp()
-    }, { merge: true })
+      const profileRef = doc(db, 'users', uid, 'private_profile', 'main')
 
-    // Step D: Now save the Profile to the sub-collection
-    await setDoc(profileRef, {
-      ...data,
-      ...results, // Save the calculated BMR/Macros
-      updatedAt: serverTimestamp()
-    })
+      await setDoc(
+        userRef,
+        {
+          uid: uid,
+          email: auth.currentUser.email,
+          displayName: auth.currentUser.displayName,
+          role: 'trainee',
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      )
 
-    // Success! Redirect to dashboard
-    navigate('/dashboard')
-  } catch (error) {
-    console.error("Error saving profile:", error)
-    alert("Failed to save profile. Please check console for details.")
+      // Step D: Now save the Profile to the sub-collection
+      await setDoc(profileRef, {
+        ...data,
+        ...results, // Save the calculated BMR/Macros
+        updatedAt: serverTimestamp(),
+      })
+
+      // Success! Redirect to dashboard
+      navigate('/dashboard')
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      alert('Failed to save profile. Please check console for details.')
+    }
   }
-}
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4">
       <Card className="max-w-2xl mx-auto">

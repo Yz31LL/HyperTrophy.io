@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is the owner
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // USERS Collection
+    match /users/{userId} {
+      // Simplification for Phase 2: Only owner can read/write
+      allow read, write: if isOwner(userId);
+    }
+
+    // PRIVATE PROFILE Sub-Collection
+    match /users/{userId}/private_profile/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // DAILY LOGS Collection
+    match /daily_logs/{logId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+      allow update: if isOwner(resource.data.userId);
+    }
+  }
+}

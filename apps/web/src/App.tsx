@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { OnboardingScreen } from './pages/onboarding/OnboardingScreen'
 import { LoginScreen } from './pages/auth/LoginScreen'
 import { SignUpScreen } from './pages/auth/SignUpScreen'
 import { useAuth } from './providers/AuthProvider'
@@ -47,6 +48,13 @@ export function App() {
         <Route path="/login" element={<LoginScreen />} />
         <Route path="/signup" element={<SignUpScreen />} />
 
+        {/* NEW: Onboarding Route (Protected) */}
+        <Route path="/onboarding" element={
+          <ProtectedRoute>
+            <OnboardingScreen />
+          </ProtectedRoute>
+        } />
+        
         {/* Protected Routes */}
         <Route
           path="/dashboard"

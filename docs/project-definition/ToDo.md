@@ -1,14 +1,21 @@
-Here is a comprehensive **ToDo.md** file tailored to your architecture (React Native + Firebase + Client-Side Logic). You can save this in your root directory or inside `docs/`.
-
----
-
 # **Project Roadmap & To-Do List: HyperTrophy.io**
 
 **Status:** 🚀 In Progress
-
 **Priority:** MVP (Minimum Viable Product)
+**Tech Stack:** React (Vite), Firebase (Auth/Firestore), Tailwind, Framer Motion, TypeScript, Turborepo.
 
-**Tech Stack:** React Native, Firebase (Auth/Firestore), TypeScript.
+---
+
+## **Phase 0: Architecture & Standards (The "Exceptional" Foundation)**
+
+_Goal: Establish documentation and quality standards to meet Rubric Level 5._
+
+- [ ] **Architecture Decision Records (ADRs)**
+  - [ ] Create `docs/adr/001-monorepo-structure.md` (Why Turborepo?).
+  - [ ] Create `docs/adr/002-client-side-logic.md` (Why no backend logic?).
+  - [ ] Create `docs/adr/003-firebase-auth.md` (Why Firebase?).
+- [ ] **Threat Modeling**
+  - [ ] Create `docs/security/THREAT_MODEL.md` (Analyze logic injection risks).
 
 ---
 
@@ -17,22 +24,23 @@ Here is a comprehensive **ToDo.md** file tailored to your architecture (React Na
 _Goal: Get a user signed in and their "Initial State" secured in the database._
 
 - [x] **Project Setup**
-- [x] Initialize React Native project (Note: Using Vite/Web Monorepo).
-- [x] Set up TypeScript configuration (`tsconfig.json`).
-- [x] Install core dependencies (`firebase`, `lucide-react`, `react-router-dom`).
-- [x] Configure ESLint & Prettier.
+
+  - [x] Initialize React/Vite project within Monorepo.
+  - [x] Set up TypeScript & ESLint/Prettier.
+  - [x] Install core dependencies (`firebase`, `lucide-react`, `react-router-dom`).
+  - [ ] **Design:** Install Tailwind CSS + Shadcn/UI (Radix Primitives).
+  - [ ] **Feature:** Setup **Storybook** for UI isolation and visual regression testing (Rubric: DevEx).
 
 - [x] **Firebase Configuration**
-- [x] Create Firebase Project in Console.
-- [x] Enable **Authentication** (Email/Password, Google).
-- [x] Enable **Firestore Database** (Start in Test Mode).
-- [x] Add `firebaseConfig` to environment variables (`.env`).
+
+  - [x] Create Firebase Project.
+  - [x] Enable Auth & Firestore.
+  - [ ] **Ops:** Create `scripts/seed-db.ts` for deterministic local development data (Rubric: Backend/API).
 
 - [x] **Authentication Flow**
-- [x] Build `LoginScreen` (Email/Pass inputs).
-- [x] Build `SignUpScreen` (Create account).
-- [x] Implement `AuthContext` (Global state for user session).
-- [x] Create Protected Routes (Redirect unauthenticated users to Login).
+  - [x] Build `LoginScreen` & `SignUpScreen`.
+  - [x] Implement `AuthContext`.
+  - [x] Create Protected Routes.
 
 ---
 
@@ -41,24 +49,25 @@ _Goal: Get a user signed in and their "Initial State" secured in the database._
 _Goal: Capture biometrics and generate the "Verified Plan" (No AI)._
 
 - [x] **Profile Data Modeling**
-- [x] Create `UserProfile` interface (Height, Weight, Age, Gender, Activity Level).
-- [x] Build **Onboarding Wizard** (Multi-step form).
-- [x] Step 1: Biometrics.
-- [x] Step 2: Goal Selection (Lose Weight, Hypertrophy, etc.).
-- [x] Step 3: Medical Flags (Injuries/Allergies).
-- [x] Save data to `users/{uid}/private_profile`.
+
+  - [x] Create `UserProfile` interface.
+  - [x] Build **Onboarding Wizard**.
+  - [x] Step 1: Biometrics.
+  - [x] Step 2: Goal Selection.
+  - [x] Step 3: Archetypes.
+  - [x] Save data to `users/{uid}/private_profile`.
 
 - [x] **The "No AI" Logic Engine (`health-calc.ts`)**
-- [x] Implement **Mifflin-St Jeor** Equation (BMR Calculation).
-- [x] Implement **TDEE Multiplier** logic (Activity Level).
-- [x] Implement **Macro Splitter** (e.g., if `Bodybuilder` -> 40% Protein).
-- [ ] **Feature:** Support Primary Archetypes (Bodybuilder, Fighter, Senior, CrossFitter) in logic.
-- [ ] **Unit Test:** Verify math against known medical examples (Ensure accuracy).
+
+  - [x] Implement **Mifflin-St Jeor** & **TDEE Multiplier**.
+  - [x] Implement **Macro Splitter** based on Archetypes.
+  - [ ] **Test:** Add **Property-Based Tests** (using `fast-check`) to prove math never returns NaN or negative calories (Rubric: Quality).
+  - [ ] **Test:** Setup **Stryker Mutator** for mutation testing of the Rules Engine.
 
 - [x] **Dashboard (Trainee View)**
-- [x] Fetch User Profile on load.
-- [x] Display "Daily Targets" (Calories, Protein, Water).
-- [ ] Build "Weight Tracker" graph (Simple Line Chart).
+  - [x] Fetch User Profile.
+  - [x] Display "Daily Targets".
+  - [x] Build "Weight Tracker" graph.
 
 ---
 
@@ -66,21 +75,15 @@ _Goal: Capture biometrics and generate the "Verified Plan" (No AI)._
 
 _Goal: Allow users to log the work they do._
 
-- [ ] **Database Schema Implementation**
-- [ ] Define `daily_logs` structure.
-- [ ] Create Firestore Indexes (if needed for sorting by date).
+- [ ] **Workout Logger UI**
 
-- [ ] **Workout Logger**
-- [ ] Create `ExerciseDatabase` (JSON file of verified exercises).
-- [ ] Build `WorkoutSession` screen.
-- [ ] Implement "Add Set" functionality (Reps, Weight, RPE).
-- [ ] **Feature:** Rest Timer (Auto-start after logging a set).
-- [ ] Save workout data to `daily_logs/{date}/workouts`.
+  - [ ] Build `WorkoutSession` screen using Shadcn primitives.
+  - [ ] **Interaction:** "Swipe to Delete" set.
+  - [ ] **Motion:** Progress bar fills smoothly as sets are logged (Framer Motion).
 
-- [ ] **Nutrition Logger**
-- [ ] Build `MealEntry` modal.
-- [ ] Create "Quick Add" buttons (Protein Shake, Chicken Breast, Rice).
-- [ ] Logic: Update "Calories Remaining" progress bar in real-time.
+- [ ] **Nutrition Logger UI**
+  - [ ] Build `MealEntry` modal (Dialog component).
+  - [ ] **Visual:** Dynamic donut chart updating in real-time.
 
 ---
 
@@ -89,58 +92,58 @@ _Goal: Allow users to log the work they do._
 _Goal: Visual feedback and Plateau detection._
 
 - [ ] **Muscle Heatmap**
-- [ ] Create SVG mapping of human muscle groups.
-- [ ] Write logic: `getWeeklyVolume()` -> `highlightMuscleGroup()`.
-- [ ] Render Heatmap on Dashboard.
-
+  - [ ] Create SVG mapping of muscle groups.
+  - [ ] Logic: `getWeeklyVolume()` -> `highlightMuscleGroup()`.
+  - [ ] **A11y:** Ensure Heatmap has a tabular data fallback for screen readers (Rubric: Design L5).
 - [ ] **Plateau Detector**
-- [ ] Write logic: Compare `avg_weight_last_7` vs `avg_weight_prev_7`.
-- [ ] If delta < 0.5% AND `calorie_deficit` is true -> **Trigger Alert**.
-- [ ] UI: Display "Plateau Detected" warning card.
+  - [ ] Logic: `avg_weight_last_7` vs `avg_weight_prev_7`.
+  - [ ] UI: "Plateau Detected" warning card with entrance animation.
 
 ---
 
-## **Phase 5: The Trainer Command Center**
+## **Phase 5: Pixel-Perfect Design & Interaction Polish**
+
+_Goal: Upgrade current UI to "Premium" standard._
+
+- [ ] **Design System Refinement**
+  - [ ] Define standard Token hierarchy (Colors, Spacing, Typography).
+  - [ ] Ensure all text meets **WCAG AA Contrast** ratios.
+- [ ] **Motion Implementation**
+  - [ ] Add **Page Transitions** (Fade/Slide) between Onboarding steps.
+  - [ ] Add **Achievement Polish:** "Confetti" effects on daily goal completion.
+
+---
+
+## **Phase 6: The Trainer Command Center**
 
 _Goal: The Dual-Sided Marketplace features._
 
-- [ ] **Trainer/Trainee Connection**
-- [ ] Create `InviteLink` generation (Simple unique ID).
-- [ ] Build `RedeemInvite` screen for Trainees.
-- [ ] Create `relationships` collection in Firestore.
-
 - [ ] **Trainer Dashboard**
-- [ ] Fetch list of linked Trainees.
-- [ ] **Risk Highlight:** Filter clients by "Last Active > 3 Days".
-- [ ] Read-Only View: Click client -> View their Dashboard.
-
-- [ ] **Communication**
-- [ ] Add "Trainer Note" field to `daily_logs`.
-- [ ] Allow Trainer to write to that field.
-- [ ] Notification Badge for Trainee when note is added.
+  - [ ] Fetch list of linked Trainees.
+  - [ ] **Ops:** Implement **Client Risk Analysis** filter (Rubric: Product Mgmt L5).
 
 ---
 
-## **Phase 6: Security & Polish**
+## **Phase 7: Security, Quality & Production Readiness**
 
-_Goal: Production readiness._
+_Goal: Meet "5 - Exceptional" standards across all categories._
 
-- [x] **Firestore Security Rules**
-- [x] Lock down `users` collection (Owner only).
-- [x] Allow Trainers `read` access to linked Trainees (Note: Trainer role defined but marketplace relationships pending).
-- [x] Validate data types (Basic validation implemented in rules).
+- [ ] **Formal A11y Audit**
+  - [ ] Run **Lighthouse CI** and target 100/100 Accessibility score.
+- [ ] **Advanced Testing & Security**
 
-- [ ] **Offline Persistence**
-- [ ] Enable Firestore Offline Persistence.
-- [ ] Handle "No Internet" UI states.
+  - [ ] **E2E:** Implement Playwright tests with ≥80% coverage.
+  - [ ] **Security:** Document **Threat Model** in `docs/security/THREAT_MODEL.md`.
+  - [ ] **Security:** Maintain an exemplary **ADR trail** in `/docs/adr`.
 
-- [ ] **Monetization (Freemium)**
-- [ ] Create "Pro" flag in User Profile.
-- [ ] Gate specific features (Heatmap, Trainer Connection) behind check.
+- [ ] **Infrastructure & Ops**
+  - [ ] **DevOps:** Setup **Canary Deploys** with automated rollbacks.
+  - [ ] **Analytics:** Implement **PostHog/Mixpanel** for data-driven decisions.
+  - [ ] **PM:** Setup automated public changelog from Changesets.
 
 ---
 
-## **Phase 7: Launch**
+## **Phase 8: Launch**
 
 - [ ] **Beta Testing:** Onboard 5 Trainers + 5 Trainees.
 - [ ] **App Store Submission:** Prepare assets (Screenshots, Icon).

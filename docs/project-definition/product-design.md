@@ -96,29 +96,44 @@ _Since we are using client-side logic, the app will run these checks on every da
 
 ## **5. User Experience (UX) & Interface Design**
 
-### **5.1. Design Aesthetic**
+### **5.1. Design Aesthetic & Polish**
 
-- **Theme:** "Dark Mode" default (battery saving for gym use).
-- **Accent Colors:**
-- _HyperTrophy Blue:_ For Bodybuilding (Trust/Science).
-- _Alert Red:_ For Fighters/Intensity.
-- _Sage Green:_ For Senior/Health.
+_Rubric Goal: "Pixel-perfect, branded design; motion/interaction polish."_
 
-- **Typography:** Monospace numbers for data (easy scanning), Sans-serif for text.
+- **Branding:** "HyperTrophy Blue" (#2563eb) is used for scientific trust, paired with sleek slate backgrounds for a premium dark-mode feel.
+- **Motion & Interaction:**
+  - **Layout Animations:** Use Framer Motion for shared element transitions when navigating between Dashboard cards and detail views.
+  - **Micro-interactions:**
+    - Buttons: Subtle scale-down (`scale-95`) and hover glow effects.
+    - Forms: Input fields use smooth focus-ring expansions using Tailwind's `ring` utilities.
+    - Achievement Polish: Confetti bursts (using `canvas-confetti`) when hitting a 7-day adherence streak or 10kg weight milestone.
+  - **Optimistic UI:** Workout logs and hydration entries update the UI locally within <50ms, with background sync to Firestore for zero-latency feel.
+- **Accessibility (A11y) Excellence:**
+  - **Formal Audit:** Periodic manual audits using VoiceOver/NVDA and automated scans (Axe-Core).
+  - **Standards:** Full WCAG 2.1 AA compliance. 100/100 Lighthouse Accessibility scores are a hard requirement.
+  - **Reduced Motion:** Automatic disabling of heavy Framer Motion transitions if `prefers-reduced-motion` is detected.
 
 ### **5.2. Key User Flows**
 
 1. **Onboarding:**
 
-- User selects Archetype -> Enters Biometrics -> Connects with Trainer (Optional) -> Dashboard.
+- User selects Archetype -> Enters Biometrics -> Logic Engine generates baseline -> Dashboard.
 
 2. **The "Gym Flow":**
 
-- Open App -> "Start Workout" -> See List of Exercises -> Log Set 1 -> Auto-start Rest Timer -> Log Set 2... -> "Finish Workout" -> See Heatmap Update.
+- Open App -> Start Workout -> Real-time rest timer triggers -> Log weights -> SVG Heatmap updates instantly.
 
 ---
 
-## **6. Monetization Strategy (Freemium)**
+## **6. Analytics & Product Health**
+
+_Rubric Goal: "Data-driven decisions (analytics); public changelog."_
+
+- **Usage Analytics (PostHog/Mixpanel):** Tracking "Daily Retention" and "Workout Completion Velocity" to identify UX bottlenecks.
+- **A/B Testing:** Running experiments on the "Plateau Alert" UI to see which nudge drives better adjustment adherence.
+- **Public Changelog:** A user-facing `/changelog` route that automatically displays the latest `Changesets` from the monorepo, keeping users informed of new "Rules Engine" refinements.
+
+## **7. Monetization Strategy (Freemium)**
 
 | Feature          | Free Tier (Trainee)       | Pro Tier (Trainee - $X/mo)         | Pro Trainer ($Y/mo)         |
 | ---------------- | ------------------------- | ---------------------------------- | --------------------------- |
@@ -130,7 +145,7 @@ _Since we are using client-side logic, the app will run these checks on every da
 
 ---
 
-## **7. Technical Constraints & Requirements**
+## **8. Technical Constraints & Requirements**
 
 - **Offline First:** The app must function in a gym basement with no signal.
 - _Solution:_ React Native `AsyncStorage` or Firestore `offlinePersistence`. Sync happens when connection is restored.
@@ -144,7 +159,7 @@ _Since we are using client-side logic, the app will run these checks on every da
 
 ---
 
-## **8. Roadmap**
+## **9. Roadmap**
 
 - **Phase 1 (MVP):**
 - User Auth, Profile Setup (Initial State), Basic Logging (Food/Workout), Simple Dashboard.

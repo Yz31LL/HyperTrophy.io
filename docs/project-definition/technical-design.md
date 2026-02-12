@@ -1,18 +1,15 @@
 # **Technical Design Document: HyperTrophy.io (Serverless)**
 
-## **1. High-Level Architecture**
+## **1. High-Level Architecture: Hexagonal & Decoupled**
 
-- **Client (Frontend):** React Native (Mobile) or React.js (Web).
-- _Responsibility:_ The app holds **all** business logic. The "Verified Rules Engine" (calculating macros, BMR, plateau detection) runs locally on the user's device in JavaScript/TypeScript.
+_Goal: "Hexagonal/CQRS advanced patterns; plug-in architecture."_
 
-- **Auth:** Firebase Authentication.
-- _Responsibility:_ Handle sign-up/login (Email, Google Auth). It provides the `uid` used to secure database paths.
-
-- **Database:** Cloud Firestore (NoSQL).
-- _Responsibility:_ Store data and enforce permissions.
-
-- **Security:** Firestore Security Rules.
-- _Responsibility:_ The "Gatekeeper." Since there is no backend server to validate data, the database rules must ensure a user cannot write a weight of "-50 lbs" or access another user's data.
+- **Core Module (@repo/shared):** Contains the "Rules Engine" (Pure functions). It is decoupled from Firebase and the UI, allowing for easy testing and portability.
+- **Adapters:**
+  - **UI Adapter:** React components using Shadcn/UI for consistent accessibility and design.
+  - **Persistence Adapter:** Firebase Firestore wrapper to allow swapping with other DBs (e.g., Supabase) if needed.
+- **Frontend Layer:** React 18 + Vite with **SSR/SEO optimizations** for public landing pages and the changelog.
+- **State Mgmt:** TanStack Query for server state (caching/optimistic updates) and RHF for form state.
 
 ---
 
@@ -20,140 +17,60 @@
 
 Since Firestore is a document store, we avoid deep nesting. We will use **Root Collections** for scalability.
 
-### **Collection: `users**`
+### **Collection: `users`**
 
 _Stores profile data for both Trainers and Trainees._
 
-- **Document ID:** `auth.uid` (Matches the Firebase Auth ID)
-- **Fields:**
-- `role`: "trainee" | "trainer"
-- `displayName`: string
-- `email`: string
-- `createdAt`: timestamp
-- **Sub-Collection: `private_profile**` (Secured so only the user + their trainer can see)
-- `height`: number
-- `weight`: number
-- `dob`: timestamp
-- `gender`: string
-- `bodyFat`: number
-- `medicalIssues`: array[string]
-- `allergies`: array[string]
-- `archetype`: "bodybuilder" | "fighter" | "senior" | etc.
+- **Document ID:** `auth.uid`
+- **Fields:** `role`, `displayName`, `email`, `createdAt`.
+- **Sub-Collection: `private_profile`**: Secured via RBAC rules.
+  - `height`, `weight`, `dob`, `gender`, `bodyFat`, `medicalIssues`, `allergies`, `archetype`.
 
-### **Collection: `relationships**`
+### **Collection: `relationships`**
 
-_Manages the link between Trainee and Trainer. This replaces SQL "Join" tables._
+_Manages Trainee-Trainer links. Correctly indexed for bidirectional lookups._
 
-- **Document ID:** `auto-generated`
-- **Fields:**
-- `traineeId`: string (Ref to users)
-- `trainerId`: string (Ref to users)
-- `status`: "active" | "pending" | "archived"
-- `permissions`: map (e.g., `{ canEditWorkouts: true, canSeeDiet: true }`)
+- **Fields:** `traineeId`, `trainerId`, `status`, `permissions`.
 
-### **Collection: `daily_logs**`
+### **Collection: `daily_logs`**
 
-_The core tracking data. Queries will be performed here._
+_Sharded and indexed for high-performance time-series queries._
 
-- **Document ID:** `auto-generated`
-- **Fields:**
-- `userId`: string (The owner of the log)
-- `date`: string (ISO format "YYYY-MM-DD")
-- `caloriesConsumed`: number
-- `protein`: number
-- `carbs`: number
-- `water`: number
-- `workouts`: array of objects
-- `exerciseId`: string
-- `sets`: array `[{reps: 10, weight: 135, rpe: 8}]`
-- `muscleGroup`: "chest" | "legs" | etc.
-
-- `notes`: string (User's diary)
-- `trainerComments`: string (Feedback from coach)
-
-### **Collection: `exercises**` (Static / Read-Only for users)
-
-- **Fields:**
-- `name`: "Bench Press"
-- `muscleTarget`: "Pectorals"
-- `type`: "Compound"
+- **Fields:** `userId`, `date` (ISO), `caloriesConsumed`, `macros` (protein, carbs, fat, water), `workouts` (array of exercise logs), `notes`, `trainerComments`.
 
 ---
 
-## **3. Logic & Security Strategy**
+## **3. Quality & Testing Foundation**
 
-Since we removed the backend functions, the **Frontend** calculates the data, and **Firestore Rules** validate it.
+_Goal: "Mutation or property-based tests; zero-regression policy."_
 
-### **A. Logic (Client-Side)**
-
-The React App will contain a utility library (e.g., `health-calc.js`) that runs verified formulas.
-
-- **Example Workflow:**
-
-1. User updates weight in UI.
-2. React App runs `Mifflin-St Jeor` formula locally.
-3. React App calculates new macro targets.
-4. React App writes _both_ the new weight and the new targets to Firestore.
-
-### **B. Security Rules (The Guardrails)**
-
-This is critical. You must prevent a malicious user (or a buggy client) from corrupting the DB.
-
-**Example Firestore Rules:**
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    // Helper function to check if user is the owner
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // Helper to check if user is the assigned trainer
-    function isTrainer(traineeId) {
-      // Query the 'relationships' collection to see if a link exists
-      // Note: In Firestore Rules, queries are limited.
-      // Strategy: The Client must include the trainerId in the document or
-      // we rely on Custom Claims (simpler) or lookups if architected carefully.
-      // *For MVP, we often store 'trainerId' directly on the user's profile for easy rule checks.*
-      return request.auth.uid == get(/databases/$(database)/documents/users/$(traineeId)).data.trainerId;
-    }
-
-    // USERS Collection
-    match /users/{userId} {
-      allow read: if isOwner(userId) || isTrainer(userId);
-      allow write: if isOwner(userId); // Only user changes their bio
-    }
-
-    // DAILY LOGS Collection
-    match /daily_logs/{logId} {
-      // Allow read if you own the log OR you are the trainer listed on the user's profile
-      allow read: if isOwner(resource.data.userId) || isTrainer(resource.data.userId);
-
-      // Allow create if you are setting yourself as the owner
-      allow create: if isOwner(request.resource.data.userId);
-
-      // Allow update if owner OR trainer (for comments)
-      allow update: if isOwner(resource.data.userId) || isTrainer(resource.data.userId);
-    }
-  }
-}
-
-```
+- **Unit Testing:** Vitest for the Rules Engine logic.
+- **Property-Based Testing:** Using `fast-check` to verify that `calculateMacros` never returns negative values regardless of input (Biometrics).
+- **Mutation Testing:** Using **Stryker Mutator** to ensure test suites actually catch bugs in the health formulas.
+- **Visual Regression:** Chromatic/Storybook integration to catch UI diffs in Shadcn components.
+- **E2E:** Playwright "Happy Path" tests running in CI for every PR.
 
 ---
 
-## **4. The "No AI" Analysis Engine**
+## **4. Security & Governance**
 
-Since this is strictly algorithmic and runs in the browser:
+_Goal: "Threat model documented; security ADRs."_
 
-1. **Dashboard Load:** The app fetches the last 30 entries from `daily_logs` and `private_profile`.
-2. **Plateau Detection:**
+- **Security ADRs:** All major security decisions (e.g., switching to Custom Claims) are documented in `docs/adr/`.
+- **Threat Modeling:** A living `THREAT_MODEL.md` document analyzing attack vectors like logic injection or unauthorized medical data access.
+- **Firestore Rules:** Principle of least privilege enforced. Rules validated via emulator in CI.
 
-- _Frontend Logic:_ `if (weight_last_7_days == weight_previous_7_days) AND (caloric_deficit == true) -> return "Metabolic Adaptation Detected"`
+---
 
-3. **Visualization:**
+## **5. Infrastructure & DevOps (L5 Excellence)**
 
-- The Heatmap logic runs locally. It iterates through the `daily_logs`, sums up sets per `muscleGroup`, and passes that data to a charting library (like `react-native-svg-charts` or `Recharts`).
+_Goal: "Multi-env config; zero-downtime migrations; canary deploys."_
+
+- **CI/CD Pipeline (GitHub Actions):**
+  - **Turbo-cached:** Builds finish in <5 mins using Turborepo's remote cache.
+  - **Canary Deploys:** Preview channels for every PR; tagging a release promotes to production with an automated rollback option.
+- **Infrastructure as Code (IaC):** Firebase indexes and security rules are managed via the Firebase CLI (version controlled).
+- **Ops & Monitoring:**
+  - **Sentry/Crashlytics:** Real-time error reporting and performance monitoring.
+  - **Cloud Logging Dashboards:** Custom metrics for "Logic Engine execution time" and "DB Write Latency."
+- **Seeding:** `scripts/seed-db.ts` for deterministic data resets during E2E testing.

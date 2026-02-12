@@ -10,12 +10,12 @@
 
 _Goal: Establish documentation and quality standards to meet Rubric Level 5._
 
-- [ ] **Architecture Decision Records (ADRs)**
-  - [ ] Create `docs/adr/001-monorepo-structure.md` (Why Turborepo?).
-  - [ ] Create `docs/adr/002-client-side-logic.md` (Why no backend logic?).
-  - [ ] Create `docs/adr/003-firebase-auth.md` (Why Firebase?).
-- [ ] **Threat Modeling**
-  - [ ] Create `docs/security/THREAT_MODEL.md` (Analyze logic injection risks).
+- [x] **Architecture Decision Records (ADRs)**
+  - [x] Create `docs/adr/001-monorepo-structure.md` (Why Turborepo?).
+  - [x] Create `docs/adr/002-client-side-logic.md` (Why no backend logic?).
+  - [x] Create `docs/adr/003-firebase-auth.md` (Why Firebase?).
+- [x] **Threat Modeling**
+  - [x] Create `docs/security/THREAT_MODEL.md` (Analyze logic injection risks).
 
 ---
 
@@ -29,13 +29,14 @@ _Goal: Get a user signed in and their "Initial State" secured in the database._
   - [x] Set up TypeScript & ESLint/Prettier.
   - [x] Install core dependencies (`firebase`, `lucide-react`, `react-router-dom`).
   - [x] **Design:** Install Tailwind CSS + Shadcn/UI (Radix Primitives).
-  - [ ] **Feature:** Setup **Storybook** for UI isolation and visual regression testing (Rubric: DevEx).
+  - [x] **Feature:** Setup **Storybook** for UI isolation and visual regression testing (Rubric: DevEx).
 
 - [x] **Firebase Configuration**
 
   - [x] Create Firebase Project.
   - [x] Enable Auth & Firestore.
-  - [ ] **Ops:** Create `scripts/seed-db.ts` for deterministic local development data (Rubric: Backend/API).
+  - [x] **Ops:** Create `scripts/seed-db.ts` for deterministic local development data (Rubric: Backend/API).
+  - [x] **Ops:** Create `firebase.json` and `.firebaserc` for local development.
 
 - [x] **Authentication Flow**
   - [x] Build `LoginScreen` & `SignUpScreen`.

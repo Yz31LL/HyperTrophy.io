@@ -20,6 +20,8 @@ import { MealEntryModal, MealFormValues } from './MealEntryModal'
 export function DashboardScreen() {
   const [isMealModalOpen, setMealModalOpen] = useState(false)
   const [consumedMacros, setConsumedMacros] = useState({ protein: 0, carbs: 0, fat: 0 })
+  const [caloriesBurned, setCaloriesBurned] = useState(0)
+
   useEffect(() => {
     const firebaseUser = auth.currentUser
     if (!firebaseUser) return
@@ -37,6 +39,23 @@ export function DashboardScreen() {
       })
 
       setConsumedMacros({ protein, carbs, fat })
+    })
+
+    return () => unsub()
+  }, [])
+
+  useEffect(() => {
+    const firebaseUser = auth.currentUser
+    if (!firebaseUser) return
+
+    const unsub = onSnapshot(collection(db, 'users', firebaseUser.uid, 'workouts'), snapshot => {
+      let totalBurned = 0
+
+      snapshot.forEach(doc => {
+        totalBurned += doc.data().caloriesBurned || 0
+      })
+
+      setCaloriesBurned(totalBurned)
     })
 
     return () => unsub()
@@ -160,6 +179,17 @@ export function DashboardScreen() {
             <CardContent className="p-4 pt-0">
               <div className="text-2xl font-bold text-green-600">{consumedMacros.fat}g</div>
               <p className="text-xs text-muted-foreground">target: {macros.fat}g</p>
+            </CardContent>
+          </Card>
+
+          {/* Calories Burned Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Calories Burned</CardTitle>
+            </CardHeader>
+
+            <CardContent>
+              <div className="text-2xl font-bold text-red-500">{caloriesBurned} kcal</div>
             </CardContent>
           </Card>
 

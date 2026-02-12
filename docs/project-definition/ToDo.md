@@ -81,10 +81,16 @@ _Goal: Allow users to log the work they do._
   - [x] Build `WorkoutSession` screen using Shadcn primitives.
   - [x] **Interaction:** "Swipe to Delete" set.
   - [x] **Motion:** Progress bar fills smoothly as sets are logged (Framer Motion).
+  - [x] Categorize exercises by muscle group.
+  - [x] Add exercises to workout session.
+  - [ ] Name the exercises
+  - [x] Display calories burned
+  - [x] Connect to Firebase Db
 
-- [ ] **Nutrition Logger UI**
-  - [ ] Build `MealEntry` modal (Dialog component).
-  - [ ] **Visual:** Dynamic donut chart updating in real-time.
+- [x] **Nutrition Logger UI**
+  - [x] Build `MealEntry` modal (Dialog component).
+  - [x] **Visual:** Dynamic donut chart updating in real-time.
+  - [x] Connect to Firebase Db
 
 ---
 

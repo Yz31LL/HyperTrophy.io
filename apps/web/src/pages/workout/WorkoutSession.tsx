@@ -1,131 +1,276 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
-import { Plus, Trash2, Check, ArrowLeft } from 'lucide-react'
+import { Plus, Trash2, Check, ArrowLeft, Timer, Flame } from 'lucide-react'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+
+// --- IMPORTS ---
+import { db, auth } from '../../lib/firebase'
+import { useProfile } from '../../hooks/useProfile' // Fetching user weight
 import { Button } from '@repo/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/Card'
 import { Input } from '@repo/ui/Input'
 import { Progress } from '@repo/ui/Progress'
-import type { WorkoutSession, ExerciseLog, WorkoutSet } from '@repo/shared/schemas'
 
-// --- MOCK DATA INITIALIZER ---
+// --- TYPES ---
+type WorkoutSet = {
+  id: string
+  weight: number | ''
+  reps: number | ''
+  completed: boolean
+}
+
+type ExerciseLog = {
+  id: string
+  name: string
+  sets: WorkoutSet[]
+}
+
+// --- CONFIG: WORKOUT CATEGORIES & MET VALUES ---
+// MET (Metabolic Equivalent) values source: Compendium of Physical Activities
+const WORKOUT_CATEGORIES = {
+  fighter: { label: 'Fighter / MMA', met: 10.3 }, // High intensity combat
+  crossfit: { label: 'CrossFit / Circuit', met: 8.0 }, // Vigorous calisthenics/circuit
+  legs: { label: 'Leg Day (Heavy)', met: 6.0 }, // Vigorous weight lifting
+  lower: { label: 'Lower Body (General)', met: 5.0 }, // Moderate weight lifting
+  upper: { label: 'Upper Body', met: 5.0 }, // Moderate-Vigorous
+  push: { label: 'Push (Chest/Triceps)', met: 4.5 },
+  pull: { label: 'Pull (Back/Biceps)', met: 4.5 },
+  arms: { label: 'Arms (Isolation)', met: 3.5 }, // Lighter intensity
+  cardio: { label: 'Cardio (Steady)', met: 7.0 },
+} as const
+
+type CategoryKey = keyof typeof WORKOUT_CATEGORIES
+
+// --- HELPER FUNCTIONS ---
 const createEmptySet = (): WorkoutSet => ({
-  id: Math.random().toString(36).substr(2, 9),
-  weight: 0,
-  reps: 0,
+  id: crypto.randomUUID(),
+  weight: '',
+  reps: '',
   completed: false,
 })
 
 const createExercise = (name: string): ExerciseLog => ({
-  id: Math.random().toString(36).substr(2, 9),
+  id: crypto.randomUUID(),
   name,
-  sets: [createEmptySet(), createEmptySet(), createEmptySet()], // Default 3 sets
+  sets: [createEmptySet(), createEmptySet(), createEmptySet()],
 })
 
 export function WorkoutSession() {
   const navigate = useNavigate()
+  const { profile } = useProfile() // Get user data for weight
 
-  // Local state for the active session
-  const [session, setSession] = useState<WorkoutSession>({
-    id: 'temp-id',
-    date: new Date().toISOString(),
-    exercises: [createExercise('Squat'), createExercise('Bench Press')],
-  })
+  // --- STATE ---
+  const [isSaving, setIsSaving] = useState(false)
+  const [category, setCategory] = useState<CategoryKey>('upper') // Default
+  const [sessionName, setSessionName] = useState('')
+  const [exercises, setExercises] = useState<ExerciseLog[]>([
+    createExercise('Exercise 1'), // Placeholder
+  ])
 
-  // --- LOGIC: Progress Calculation ---
-  const totalSets = session.exercises.reduce((acc, ex) => acc + ex.sets.length, 0)
-  const completedSets = session.exercises.reduce(
+  // --- TIMER STATE ---
+  const startTime = useRef<number>(Date.now())
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+
+  // --- EFFECT: LIVE TIMER ---
+  useEffect(() => {
+    // Reset start time on mount
+    startTime.current = Date.now()
+
+    const timer = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime.current) / 1000))
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [])
+
+  // --- MATH: LIVE CALORIE CALCULATION ---
+  const calculateLiveCalories = () => {
+    const userWeightKg = profile?.weight || 75 // Fallback to 75kg if no profile
+    const met = WORKOUT_CATEGORIES[category].met
+    const durationMinutes = elapsedSeconds / 60
+
+    // Formula: (MET * 3.5 * weight) / 200 = Kcal/min
+    const kcalPerMin = (met * 3.5 * userWeightKg) / 200
+    return Math.floor(kcalPerMin * durationMinutes)
+  }
+
+  const liveCalories = calculateLiveCalories()
+
+  // --- FORMATTING HELPERS ---
+  const formatTime = (totalSeconds: number) => {
+    const m = Math.floor(totalSeconds / 60)
+    const s = totalSeconds % 60
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  }
+
+  // --- ACTIONS ---
+  const updateSet = (
+    exIndex: number,
+    setIndex: number,
+    field: 'weight' | 'reps',
+    value: number | ''
+  ) => {
+    setExercises(prev => {
+      const next = structuredClone(prev)
+      next[exIndex].sets[setIndex][field] = value as never
+      return next
+    })
+  }
+
+  const toggleSetComplete = (exIndex: number, setIndex: number) => {
+    setExercises(prev => {
+      const next = structuredClone(prev)
+      const set = next[exIndex].sets[setIndex]
+      set.completed = !set.completed
+      return next
+    })
+  }
+
+  const removeSet = (exIndex: number, setId: string) => {
+    setExercises(prev => {
+      const next = structuredClone(prev)
+      next[exIndex].sets = next[exIndex].sets.filter(s => s.id !== setId)
+      return next
+    })
+  }
+
+  const addSet = (exIndex: number) => {
+    setExercises(prev => {
+      const next = structuredClone(prev)
+      next[exIndex].sets.push(createEmptySet())
+      return next
+    })
+  }
+
+  // --- FIREBASE SAVE ---
+  const handleFinish = async () => {
+    const user = auth.currentUser
+    if (!user) return
+
+    setIsSaving(true)
+
+    // Final Calculation
+    const finalDurationMin = Math.ceil(elapsedSeconds / 60)
+    const finalCalories = calculateLiveCalories()
+
+    try {
+      // Clean Data
+      const cleanExercises = exercises.map(ex => ({
+        ...ex,
+        sets: ex.sets.map(s => ({
+          ...s,
+          weight: Number(s.weight) || 0,
+          reps: Number(s.reps) || 0,
+        })),
+      }))
+
+      await addDoc(collection(db, 'users', user.uid, 'workouts'), {
+        name: sessionName || WORKOUT_CATEGORIES[category].label,
+        category, // "fighter", "legs", etc.
+        categoryLabel: WORKOUT_CATEGORIES[category].label,
+        durationMinutes: finalDurationMin,
+        caloriesBurned: finalCalories,
+        exercises: cleanExercises,
+        completedAt: serverTimestamp(),
+      })
+
+      navigate('/dashboard')
+    } catch (error) {
+      console.error('Error saving workout:', error)
+      alert('Failed to save. Check console.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Logic for Progress Bar
+  const totalSets = exercises.reduce((acc, ex) => acc + ex.sets.length, 0)
+  const completedSets = exercises.reduce(
     (acc, ex) => acc + ex.sets.filter(s => s.completed).length,
     0
   )
   const progress = totalSets === 0 ? 0 : (completedSets / totalSets) * 100
 
-  // --- ACTIONS ---
-  const toggleSetComplete = (exIndex: number, setIndex: number) => {
-    setSession(prev => {
-      const newExercises = [...prev.exercises]
-      const newSets = [...newExercises[exIndex].sets]
-      newSets[setIndex] = { ...newSets[setIndex], completed: !newSets[setIndex].completed }
-      newExercises[exIndex] = { ...newExercises[exIndex], sets: newSets }
-      return { ...prev, exercises: newExercises }
-    })
-  }
-
-  const removeSet = (exIndex: number, setId: string) => {
-    const newExercises = [...session.exercises]
-    newExercises[exIndex].sets = newExercises[exIndex].sets.filter(s => s.id !== setId)
-    setSession({ ...session, exercises: newExercises })
-  }
-
-  const addSet = (exIndex: number) => {
-    const newExercises = [...session.exercises]
-    newExercises[exIndex].sets.push(createEmptySet())
-    setSession({ ...session, exercises: newExercises })
-  }
-
-  const updateSet = (
-    exIndex: number,
-    setIndex: number,
-    field: 'weight' | 'reps' | 'rpe',
-    value: number
-  ) => {
-    setSession(prev => {
-      const newExercises = [...prev.exercises]
-      const newSets = [...newExercises[exIndex].sets]
-      newSets[setIndex] = { ...newSets[setIndex], [field]: value }
-      newExercises[exIndex] = { ...newExercises[exIndex], sets: newSets }
-      return { ...prev, exercises: newExercises }
-    })
-  }
-
-  const handleFinish = () => {
-    // TODO: Save to Firebase in Phase 3.2
-    console.log('Saving workout:', session)
-    navigate('/dashboard')
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
       {/* HEADER */}
-      <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b px-4 py-3">
-        <div className="flex items-center justify-between mb-2">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Exit
-          </Button>
-          <span className="font-bold text-lg">Current Workout</span>
-          <Button size="sm" onClick={handleFinish}>
-            Finish
-          </Button>
-        </div>
+      <div className="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b shadow-sm">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between mb-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
+              <ArrowLeft className="h-4 w-4 mr-1" />
+            </Button>
 
-        {/* MOTION: Progress Bar */}
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Progress</span>
-            <span>{Math.round(progress)}%</span>
+            <div className="flex flex-col items-center">
+              <span className="font-bold text-sm">Active Session</span>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono">
+                <span className="flex items-center gap-1">
+                  <Timer className="h-3 w-3" /> {formatTime(elapsedSeconds)}
+                </span>
+                <span className="flex items-center gap-1 text-orange-500 font-bold">
+                  <Flame className="h-3 w-3" /> {liveCalories} kcal
+                </span>
+              </div>
+            </div>
+
+            <Button size="sm" onClick={handleFinish} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Finish'}
+            </Button>
           </div>
-          <Progress value={progress} className="h-2" />
+
+          {/* Category Selector */}
+          <div className="mb-2">
+            <label className="text-xs font-semibold text-muted-foreground ml-1">WORKOUT TYPE</label>
+            <select
+              value={category}
+              onChange={e => setCategory(e.target.value as CategoryKey)}
+              className="w-full mt-1 p-2 rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              {Object.entries(WORKOUT_CATEGORIES).map(([key, value]) => (
+                <option key={key} value={key}>
+                  {value.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Progress value={progress} className="h-1.5" />
         </div>
       </div>
 
+      {/* EXERCISE LIST */}
       <div className="p-4 space-y-6 max-w-md mx-auto">
-        {session.exercises.map((exercise, exIndex) => (
-          <Card key={exercise.id} className="overflow-hidden">
+        {/* Name Input */}
+        <div className="mb-4">
+          <label className="text-xs font-semibold text-muted-foreground ml-1">
+            SESSION NAME (OPTIONAL)
+          </label>
+          <Input
+            placeholder={WORKOUT_CATEGORIES[category].label}
+            value={sessionName}
+            onChange={e => setSessionName(e.target.value)}
+            className="mt-1"
+          />
+        </div>
+
+        {exercises.map((exercise, exIndex) => (
+          <Card key={exercise.id} className="overflow-hidden border-t-4 border-t-blue-500">
             <CardHeader className="bg-slate-100 dark:bg-slate-800 py-3">
               <CardTitle className="text-base flex justify-between items-center">
                 {exercise.name}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              {/* SET HEADERS */}
-              <div className="grid grid-cols-10 gap-2 p-2 text-xs font-medium text-center text-muted-foreground border-b">
+              {/* Header */}
+              <div className="grid grid-cols-10 gap-2 p-2 text-[10px] font-bold tracking-wider text-center text-muted-foreground border-b bg-slate-50/50">
                 <div className="col-span-2">SET</div>
                 <div className="col-span-3">KG</div>
                 <div className="col-span-3">REPS</div>
                 <div className="col-span-2">DONE</div>
               </div>
 
-              {/* SETS LIST */}
+              {/* Sets */}
               <AnimatePresence initial={false}>
                 {exercise.sets.map((set, setIndex) => (
                   <SwipeToDeleteSet
@@ -141,7 +286,7 @@ export function WorkoutSession() {
 
               <Button
                 variant="ghost"
-                className="w-full rounded-none border-t h-12 text-muted-foreground hover:text-primary"
+                className="w-full rounded-none border-t h-12 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                 onClick={() => addSet(exIndex)}
               >
                 <Plus className="h-4 w-4 mr-2" /> Add Set
@@ -149,6 +294,17 @@ export function WorkoutSession() {
             </CardContent>
           </Card>
         ))}
+
+        {/* Add Exercise Button (Placeholder for future feature) */}
+        <Button
+          variant="outline"
+          className="w-full border-dashed"
+          onClick={() => {
+            setExercises(prev => [...prev, createExercise('New Exercise')])
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" /> Add Exercise
+        </Button>
       </div>
     </div>
   )
@@ -166,69 +322,70 @@ function SwipeToDeleteSet({
   index: number
   onDelete: () => void
   onToggle: () => void
-  onUpdate: (field: 'weight' | 'reps' | 'rpe', val: number) => void
+  onUpdate: (field: 'weight' | 'reps', val: number | '') => void
 }) {
-  // We use Framer Motion drag to detect swipe
-  // If dragged far enough left, we show delete button or delete
-
   return (
     <motion.div
       layout
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
-      className="relative border-b last:border-0 bg-white dark:bg-gray-900"
+      className="relative border-b last:border-0 bg-white dark:bg-gray-900 overflow-hidden"
     >
-      {/* Background Layer (Delete Icon) */}
       <div className="absolute inset-0 bg-red-500 flex items-center justify-end px-4">
         <Trash2 className="text-white h-5 w-5" />
       </div>
 
-      {/* Foreground Layer (Input Fields) */}
       <motion.div
         drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
+        dragConstraints={{ left: -100, right: 0 }}
         dragElastic={0.1}
+        dragSnapToOrigin
         onDragEnd={(_, info: PanInfo) => {
-          if (info.offset.x < -100) {
-            onDelete()
-          }
+          if (info.offset.x < -80) onDelete()
         }}
-        className="relative bg-white dark:bg-gray-900 grid grid-cols-10 gap-2 p-2 items-center"
+        className="relative bg-white dark:bg-gray-900 grid grid-cols-10 gap-2 p-2 items-center z-10"
       >
-        <div className="col-span-2 text-center font-mono text-muted-foreground">{index}</div>
+        <div className="col-span-2 text-center font-mono text-muted-foreground text-sm">
+          {index}
+        </div>
+
         <div className="col-span-3">
           <Input
             type="number"
-            placeholder="0"
-            className="text-center h-8"
-            value={set.weight ?? ''}
-            onChange={e => onUpdate('weight', Number(e.target.value))}
+            placeholder="-"
+            className="text-center h-8 text-sm"
+            value={set.weight}
+            onFocus={e => e.target.select()}
+            onChange={e => onUpdate('weight', e.target.value === '' ? '' : Number(e.target.value))}
           />
         </div>
+
         <div className="col-span-3">
           <Input
             type="number"
-            placeholder="0"
-            className="text-center h-8"
-            value={set.reps ?? ''}
-            onChange={e => onUpdate('reps', Number(e.target.value))}
+            placeholder="-"
+            className="text-center h-8 text-sm"
+            value={set.reps}
+            onFocus={e => e.target.select()}
+            onChange={e => onUpdate('reps', e.target.value === '' ? '' : Number(e.target.value))}
           />
         </div>
+
         <div className="col-span-2 flex justify-center">
           <motion.div
             whileTap={{ scale: 0.9 }}
             onClick={onToggle}
             className={`
-              w-8 h-8 rounded-md flex items-center justify-center cursor-pointer border
+              w-8 h-8 rounded-md flex items-center justify-center cursor-pointer border transition-colors shadow-sm
               ${
                 set.completed
                   ? 'bg-green-500 border-green-500 text-white'
-                  : 'bg-gray-100 border-gray-200 dark:bg-gray-800 dark:border-gray-700'
+                  : 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700'
               }
             `}
           >
-            {set.completed && <Check className="h-4 w-4" />}
+            <Check className="h-4 w-4" />
           </motion.div>
         </div>
       </motion.div>

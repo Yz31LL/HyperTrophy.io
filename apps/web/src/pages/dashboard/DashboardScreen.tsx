@@ -12,7 +12,15 @@ import {
   calculateMacros,
 } from '../../lib/health-calc'
 import { WeightChart } from './WeightChart'
-import { collection, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore'
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  onSnapshot,
+  query,
+  where,
+  Timestamp,
+} from 'firebase/firestore'
 import { db, auth } from '../../lib/firebase'
 import { NutritionDonutChart } from './NutritionDonutChart'
 import { MealEntryModal, MealFormValues } from './MealEntryModal'
@@ -20,7 +28,7 @@ import { MealEntryModal, MealFormValues } from './MealEntryModal'
 export function DashboardScreen() {
   const [isMealModalOpen, setMealModalOpen] = useState(false)
   const [consumedMacros, setConsumedMacros] = useState({ protein: 0, carbs: 0, fat: 0 })
-  const [caloriesBurned, setCaloriesBurned] = useState(0)
+  const [dailyCaloriesBurned, setDailyCaloriesBurned] = useState(0)
 
   useEffect(() => {
     const firebaseUser = auth.currentUser
@@ -48,14 +56,25 @@ export function DashboardScreen() {
     const firebaseUser = auth.currentUser
     if (!firebaseUser) return
 
-    const unsub = onSnapshot(collection(db, 'users', firebaseUser.uid, 'workouts'), snapshot => {
-      let totalBurned = 0
+    // 1. Calculate the timestamp for "Midnight Today"
+    const now = new Date()
+    now.setHours(0, 0, 0, 0) // Reset time to 00:00:00
+    const startOfToday = Timestamp.fromDate(now)
+
+    // 2. Query: Fetch workouts ONLY where completedAt >= Midnight Today
+    const workoutsRef = collection(db, 'users', firebaseUser.uid, 'workouts')
+    const q = query(workoutsRef, where('completedAt', '>=', startOfToday))
+
+    const unsub = onSnapshot(q, snapshot => {
+      let totalBurnedToday = 0
 
       snapshot.forEach(doc => {
-        totalBurned += doc.data().caloriesBurned || 0
+        // Safety check: ensure caloriesBurned exists
+        const data = doc.data()
+        totalBurnedToday += Number(data.caloriesBurned) || 0
       })
 
-      setCaloriesBurned(totalBurned)
+      setDailyCaloriesBurned(totalBurnedToday)
     })
 
     return () => unsub()
@@ -142,17 +161,15 @@ export function DashboardScreen() {
           <Card>
             <CardHeader className="p-4 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Flame className="h-4 w-4 text-orange-500" /> Calories
+                <Flame className="h-4 w-4 text-red-500" /> Burned (Today)
               </CardTitle>
             </CardHeader>
+
             <CardContent className="p-4 pt-0">
-              <div className="text-2xl font-bold">{targetCalories}</div>
-              <p className="text-xs text-muted-foreground">
-                {Math.round(
-                  consumedMacros.protein * 4 + consumedMacros.carbs * 4 + consumedMacros.fat * 9
-                )}{' '}
-                kcal logged
-              </p>
+              <div className="text-2xl font-bold text-red-500">
+                {dailyCaloriesBurned} <span className="text-sm text-muted-foreground">kcal</span>
+              </div>
+              <p className="text-xs text-muted-foreground">from logged workouts</p>
             </CardContent>
           </Card>
 
@@ -189,7 +206,7 @@ export function DashboardScreen() {
             </CardHeader>
 
             <CardContent>
-              <div className="text-2xl font-bold text-red-500">{caloriesBurned} kcal</div>
+              <div className="text-2xl font-bold text-red-500">{dailyCaloriesBurned} kcal</div>
             </CardContent>
           </Card>
 

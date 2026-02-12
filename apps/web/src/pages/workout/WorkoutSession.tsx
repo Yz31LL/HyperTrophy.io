@@ -210,7 +210,7 @@ export function WorkoutSession() {
         category,
         categoryLabel: WORKOUT_CATEGORIES[category].label,
         durationMinutes: finalDurationMin,
-        caloriesBurned: finalCalories,
+        dailyCaloriesBurned: finalCalories,
         exercises: cleanExercises,
         completedAt: serverTimestamp(),
       })

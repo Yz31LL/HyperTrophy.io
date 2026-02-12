@@ -5,7 +5,6 @@ import { SignUpScreen } from './pages/auth/SignUpScreen'
 import { DashboardScreen } from './pages/dashboard/DashboardScreen'
 import { useAuth } from './providers/AuthProvider'
 
-
 // A wrapper to protect routes that require login
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth()
@@ -18,8 +17,6 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
   return children
 }
 
-
-
 export function App() {
   return (
     <BrowserRouter>
@@ -29,20 +26,25 @@ export function App() {
         <Route path="/signup" element={<SignUpScreen />} />
 
         {/* NEW: Onboarding Route (Protected) */}
-        <Route path="/onboarding" element={
-          <ProtectedRoute>
-            <OnboardingScreen />
-          </ProtectedRoute>
-        } />
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <OnboardingScreen />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Protected Routes */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <DashboardScreen />
-          </ProtectedRoute>
-        } />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardScreen />
+            </ProtectedRoute>
+          }
+        />
 
-    
         {/* Default Redirect */}
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>

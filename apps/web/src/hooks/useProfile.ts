@@ -12,14 +12,17 @@ export function useProfile() {
 
     // Real-time listener for the profile
     // If the user updates their weight later, the dashboard updates instantly!
-    const unsub = onSnapshot(doc(db, 'users', auth.currentUser.uid, 'private_profile', 'main'), (doc) => {
-      if (doc.exists()) {
-        setProfile(doc.data() as UserProfile)
-      } else {
-        setProfile(null)
+    const unsub = onSnapshot(
+      doc(db, 'users', auth.currentUser.uid, 'private_profile', 'main'),
+      doc => {
+        if (doc.exists()) {
+          setProfile(doc.data() as UserProfile)
+        } else {
+          setProfile(null)
+        }
+        setLoading(false)
       }
-      setLoading(false)
-    })
+    )
 
     return () => unsub()
   }, [])

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { UserProfileSchema, type UserProfile } from '@repo/shared/schemas'
 import { Button } from '@repo/ui/Button'
+import { z } from 'zod'
 import {
   Card,
   CardContent,
@@ -40,6 +41,9 @@ interface HealthResults {
   }
 }
 
+// Define Input type to allow optional fields (handled by Zod defaults)
+type UserProfileInput = z.input<typeof UserProfileSchema>
+
 export function OnboardingScreen() {
   const [step, setStep] = useState(0)
   const [results, setResults] = useState<HealthResults | null>(null)
@@ -52,8 +56,8 @@ export function OnboardingScreen() {
     trigger,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<UserProfile>({
-    resolver: zodResolver(UserProfileSchema) as import('react-hook-form').Resolver<UserProfile>,
+  } = useForm<UserProfileInput, undefined, UserProfile>({
+    resolver: zodResolver(UserProfileSchema),
     defaultValues: {
       gender: 'male',
       age: 25,
@@ -68,10 +72,11 @@ export function OnboardingScreen() {
   })
 
   // Watch values for real-time preview if needed
+  // We cast to UserProfile because we know defaults will be applied by the time we use this
   const formData = watch() as UserProfile
 
   const handleNext = async () => {
-    let fieldsToValidate: (keyof UserProfile)[] = []
+    let fieldsToValidate: (keyof UserProfileInput)[] = []
 
     if (step === 0) fieldsToValidate = ['age', 'gender', 'height', 'weight']
     if (step === 1) fieldsToValidate = ['activityLevel', 'goal']

@@ -28,7 +28,7 @@ _Goal: Get a user signed in and their "Initial State" secured in the database._
   - [x] Initialize React/Vite project within Monorepo.
   - [x] Set up TypeScript & ESLint/Prettier.
   - [x] Install core dependencies (`firebase`, `lucide-react`, `react-router-dom`).
-  - [ ] **Design:** Install Tailwind CSS + Shadcn/UI (Radix Primitives).
+  - [x] **Design:** Install Tailwind CSS + Shadcn/UI (Radix Primitives).
   - [ ] **Feature:** Setup **Storybook** for UI isolation and visual regression testing (Rubric: DevEx).
 
 - [x] **Firebase Configuration**

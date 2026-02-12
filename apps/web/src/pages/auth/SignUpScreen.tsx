@@ -49,8 +49,7 @@ export function SignUpScreen() {
         })
       }
 
-      // 3. Redirect to Dashboard (or Onboarding in Phase 2)
-      navigate('/dashboard')
+      navigate('/onboarding')
     } catch (err) {
       console.error(err)
       const error = err as { code?: string }

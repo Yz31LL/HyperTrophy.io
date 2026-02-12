@@ -154,7 +154,7 @@ export function OnboardingScreen() {
 
         <CardContent>
           <form id="onboarding-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* STEP 1: BIOMETRICS */}
+            {/* BIOMETRICS */}
             {step === 0 && (
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -203,7 +203,7 @@ export function OnboardingScreen() {
               </div>
             )}
 
-            {/* STEP 2: LIFESTYLE */}
+            {/* LIFESTYLE */}
             {step === 1 && (
               <div className="space-y-6">
                 <div className="space-y-2">
@@ -217,6 +217,24 @@ export function OnboardingScreen() {
                     <option value="moderate">Moderate (Exercise 3-5 days/week)</option>
                     <option value="heavy">Heavy (Exercise 6-7 days/week)</option>
                     <option value="athlete">Athlete (Physical job + hard training)</option>
+                  </select>
+                </div>
+
+                {/* ARCHETYPES */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Archetype Strategy</label>
+                  <p className="text-xs text-muted-foreground">
+                    This adjusts your macro split (e.g. Bodybuilders get more protein).
+                  </p>
+                  <select
+                    {...register('archetype')}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="general">General Fitness (Balanced)</option>
+                    <option value="bodybuilder">Bodybuilder (High Protein)</option>
+                    <option value="fighter">Fighter (High Carb / Explosive)</option>
+                    <option value="crossfitter">CrossFitter (High Work Capacity)</option>
+                    <option value="senior">Senior (Longevity & Maintenance)</option>
                   </select>
                 </div>
 
@@ -240,7 +258,7 @@ export function OnboardingScreen() {
               </div>
             )}
 
-            {/* STEP 3: RESULTS & CONFIRMATION */}
+            {/* RESULTS & CONFIRMATION */}
             {step === 2 && results && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="grid gap-4 sm:grid-cols-3">

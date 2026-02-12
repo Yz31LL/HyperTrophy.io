@@ -62,8 +62,8 @@ _Goal: Capture biometrics and generate the "Verified Plan" (No AI)._
 
   - [x] Implement **Mifflin-St Jeor** & **TDEE Multiplier**.
   - [x] Implement **Macro Splitter** based on Archetypes.
-  - [ ] **Test:** Add **Property-Based Tests** (using `fast-check`) to prove math never returns NaN or negative calories (Rubric: Quality).
-  - [ ] **Test:** Setup **Stryker Mutator** for mutation testing of the Rules Engine.
+  - [x] **Test:** Add **Property-Based Tests** (using `fast-check`) to prove math never returns NaN or negative calories (Rubric: Quality).
+  - [x] **Test:** Setup **Stryker Mutator** for mutation testing of the Rules Engine.
 
 - [x] **Dashboard (Trainee View)**
   - [x] Fetch User Profile.

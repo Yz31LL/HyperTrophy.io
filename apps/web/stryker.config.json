@@ -1,0 +1,11 @@
+{
+  "mutate": ["src/lib/health-calc.ts"],
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "reporters": ["progress", "clear-text", "html"],
+  "concurrency": 4,
+  "coverageAnalysis": "perTest",
+  "vitest": {
+    "configFile": "vite.config.ts"
+  }
+}

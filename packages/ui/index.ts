@@ -29,3 +29,5 @@ export {
 
 // Utilities
 export { cn } from './lib/utils'
+export { Input } from './components/ui/input'
+export { Progress } from './components/ui/progress'

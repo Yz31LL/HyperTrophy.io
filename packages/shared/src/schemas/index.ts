@@ -1,5 +1,6 @@
 export { UserSchema, CreateUserSchema } from './user'
 export type { User, CreateUser } from './user'
+export * from './workout'
 
 export {
   UserProfileSchema,

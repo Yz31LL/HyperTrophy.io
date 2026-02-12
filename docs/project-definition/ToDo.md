@@ -76,11 +76,11 @@ _Goal: Capture biometrics and generate the "Verified Plan" (No AI)._
 
 _Goal: Allow users to log the work they do._
 
-- [ ] **Workout Logger UI**
+- [x] **Workout Logger UI**
 
-  - [ ] Build `WorkoutSession` screen using Shadcn primitives.
-  - [ ] **Interaction:** "Swipe to Delete" set.
-  - [ ] **Motion:** Progress bar fills smoothly as sets are logged (Framer Motion).
+  - [x] Build `WorkoutSession` screen using Shadcn primitives.
+  - [x] **Interaction:** "Swipe to Delete" set.
+  - [x] **Motion:** Progress bar fills smoothly as sets are logged (Framer Motion).
 
 - [ ] **Nutrition Logger UI**
   - [ ] Build `MealEntry` modal (Dialog component).

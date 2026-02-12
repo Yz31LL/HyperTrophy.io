@@ -110,9 +110,9 @@ export function DashboardScreen() {
             <p className="text-sm text-muted-foreground mb-4">
               Track your sets, reps, and RPE for today.
             </p>
-            <Button className="w-full" disabled>
-              Coming in Phase 3
-            </Button>
+            <Link to="/workout">
+              <Button className="w-full">Start Workout Log</Button>
+            </Link>
           </CardContent>
         </Card>
 

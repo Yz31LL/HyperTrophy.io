@@ -14,65 +14,82 @@ interface WeightChartProps {
   history?: WeightLog[]
 }
 
-// Mock data for Phase 2 (Phase 3 will fetch real history)
-const data = [
-  { date: 'Mon', weight: 80.5 },
-  { date: 'Tue', weight: 80.2 },
-  { date: 'Wed', weight: 80.4 },
-  { date: 'Thu', weight: 80.1 },
-  { date: 'Fri', weight: 79.9 },
-  { date: 'Sat', weight: 79.8 },
-  { date: 'Sun', weight: 79.5 },
-]
-
 export function WeightChart({ history }: WeightChartProps) {
-  // Use history if available, else fallback to mock data for now
+  // 1. Process Data: Convert Firestore Timestamps to JS Dates & Sort
   const chartData =
     history && history.length > 0
       ? history
-          .map(log => ({
-            date: log.date.toDate().toLocaleDateString('en-US', { weekday: 'short' }),
-            weight: log.weight,
-          }))
+          .map(log => {
+            // Handle Firestore Timestamp (has .toDate()) or standard Date
+            const dateObj =
+              log.date && typeof log.date.toDate === 'function'
+                ? log.date.toDate()
+                : new Date(log.date as unknown as string)
+
+            return {
+              rawDate: dateObj,
+              dateLabel: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), // e.g. "Jan 1"
+              weight: log.weight,
+            }
+          })
+          // Dashboard passes desc (Newest First), so we reverse to show timeline (Oldest -> Newest)
           .reverse()
-      : data
+      : []
+
+  if (chartData.length === 0) {
+    return (
+      <Card className="col-span-2 bg-zinc-900 border-zinc-800">
+        <CardHeader>
+          <CardTitle className="text-zinc-400">Weight Trend</CardTitle>
+        </CardHeader>
+        <CardContent className="h-[300px] flex items-center justify-center text-zinc-500">
+          <p>No weight data logged yet.</p>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
-    <Card className="col-span-2">
+    <Card className="col-span-2 bg-zinc-900 border-zinc-800">
       <CardHeader>
-        <CardTitle>Weight Trend</CardTitle>
+        <CardTitle className="text-zinc-200">Weight Trend</CardTitle>
       </CardHeader>
       <CardContent className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" />
             <XAxis
-              dataKey="date"
+              dataKey="dateLabel"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: '#888' }}
+              tick={{ fontSize: 12, fill: '#71717a' }} // Zinc-500
               dy={10}
+              minTickGap={30} // Prevents bunching up if you have many logs
             />
             <YAxis
-              domain={['auto', 'auto']}
+              domain={['dataMin - 2', 'dataMax + 2']} // Adds padding so the line isn't at the edge
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: '#888' }}
+              tick={{ fontSize: 12, fill: '#71717a' }}
+              width={40}
             />
             <Tooltip
               contentStyle={{
+                backgroundColor: '#18181b', // Zinc-950
+                borderColor: '#27272a', // Zinc-800
                 borderRadius: '8px',
-                border: 'none',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                color: '#fff',
               }}
+              itemStyle={{ color: '#fff' }}
+              labelStyle={{ color: '#a1a1aa' }}
             />
             <Line
               type="monotone"
               dataKey="weight"
-              stroke="#2563eb" // Primary Blue
+              stroke="#2563eb" // Blue-600 (Matches your Protein/Macro colors)
               strokeWidth={3}
               dot={{ r: 4, fill: '#2563eb', strokeWidth: 0 }}
-              activeDot={{ r: 6 }}
+              activeDot={{ r: 6, fill: '#60a5fa' }}
             />
           </LineChart>
         </ResponsiveContainer>

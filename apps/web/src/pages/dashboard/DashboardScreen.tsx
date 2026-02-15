@@ -17,6 +17,7 @@ import { collection, addDoc, serverTimestamp, onSnapshot } from 'firebase/firest
 import { db, auth } from '../../lib/firebase'
 import { NutritionDonutChart } from './NutritionDonutChart'
 import { MealEntryModal, MealFormValues } from './MealEntryModal'
+import { WeightEntryModal } from './WeightEntryModal'
 import { MuscleHeatmap } from './MuscleHeatmap'
 import { PlateauAlert } from './PlateauAlert'
 import {
@@ -29,6 +30,7 @@ import {
 
 export function DashboardScreen() {
   const [isMealModalOpen, setMealModalOpen] = useState(false)
+  const [isWeightModalOpen, setWeightModalOpen] = useState(false)
   const [consumedMacros, setConsumedMacros] = useState({ protein: 0, carbs: 0, fat: 0 })
   const [dailyCaloriesBurned, setDailyCaloriesBurned] = useState(0)
   const [volumeData, setVolumeData] = useState<Record<MuscleGroup, number> | null>(null)
@@ -139,7 +141,7 @@ export function DashboardScreen() {
   const { user } = useAuth()
   const { profile, loading } = useProfile()
 
-  // Targets calculation for logic usage
+  // REAL MATH ANALYTICS
   const bmr = profile ? calculateBMR(profile) : 0
   const tdee = profile ? calculateTDEE(bmr, profile.activityLevel) : 0
   const targetCalories = profile ? calculateTargetCalories(tdee, profile.goal) : 0
@@ -147,12 +149,12 @@ export function DashboardScreen() {
     ? calculateMacros(profile, targetCalories)
     : { protein: 0, carbs: 0, fat: 0 }
 
+  const totalConsumed =
+    consumedMacros.protein * 4 + consumedMacros.carbs * 4 + consumedMacros.fat * 9
+
   // CELEBRATION EFFECT
   useEffect(() => {
     if (loading || !profile || hasCelebrated) return
-
-    const totalConsumed =
-      consumedMacros.protein * 4 + consumedMacros.carbs * 4 + consumedMacros.fat * 9
 
     // Trigger confetti if daily calorie goal is reached (>= 95% for flexibility)
     if (totalConsumed >= targetCalories * 0.95 && targetCalories > 0) {
@@ -164,7 +166,7 @@ export function DashboardScreen() {
       })
       setHasCelebrated(true)
     }
-  }, [consumedMacros, targetCalories, loading, hasCelebrated, profile])
+  }, [totalConsumed, targetCalories, loading, hasCelebrated, profile])
 
   if (loading) return <div className="p-8 text-center">Loading your plan...</div>
 
@@ -218,6 +220,56 @@ export function DashboardScreen() {
 
       {/* ALERT SYSTEM */}
       <PlateauAlert isDetected={isPlateau} />
+      {/* NEW: ENERGY BALANCE CARD (THE MATH) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="md:col-span-3 bg-zinc-900 border-zinc-800">
+          <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* EAT */}
+            <div className="text-center">
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Eaten</p>
+              <p className="text-3xl font-bold text-blue-500">{Math.round(totalConsumed)}</p>
+            </div>
+
+            {/* MATH OPERATOR */}
+            <div className="text-zinc-600 font-bold text-xl">-</div>
+
+            {/* BURN (Base + Active) */}
+            <div className="text-center">
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                Burned (Total)
+              </p>
+              <div className="flex flex-col items-center">
+                <p className="text-3xl font-bold text-orange-500">
+                  {Math.round(tdee + dailyCaloriesBurned)}
+                </p>
+                <span className="text-[10px] text-zinc-500">
+                  ({Math.round(tdee)} Life + {dailyCaloriesBurned} Gym)
+                </span>
+              </div>
+            </div>
+
+            {/* MATH OPERATOR */}
+            <div className="text-zinc-600 font-bold text-xl">=</div>
+
+            {/* NET RESULT */}
+            <div className="text-center">
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                Net Balance
+              </p>
+              <p
+                className={`text-3xl font-bold ${totalConsumed > tdee + dailyCaloriesBurned ? 'text-red-500' : 'text-green-500'}`}
+              >
+                {Math.round(totalConsumed - (tdee + dailyCaloriesBurned))}
+              </p>
+              <p className="text-[10px] text-zinc-400">
+                {totalConsumed > tdee + dailyCaloriesBurned
+                  ? 'Surplus (Gaining)'
+                  : 'Deficit (Losing)'}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* MAIN STATS GRID */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -303,13 +355,21 @@ export function DashboardScreen() {
         </div>
       </div>
 
-      {/* LOG MEAL BUTTON */}
-      <Button
-        onClick={() => setMealModalOpen(true)}
-        className="w-full bg-green-600 hover:bg-green-700 shadow-lg transition-transform active:scale-[0.98]"
-      >
-        Log Nutrition +
-      </Button>
+      {/* LOG BUTTONS */}
+      <div className="grid grid-cols-2 gap-4">
+        <Button
+          onClick={() => setMealModalOpen(true)}
+          className="bg-green-600 hover:bg-green-700 shadow-lg transition-transform active:scale-[0.98]"
+        >
+          Log Nutrition +
+        </Button>
+        <Button
+          onClick={() => setWeightModalOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 shadow-lg transition-transform active:scale-[0.98]"
+        >
+          Log Weight +
+        </Button>
+      </div>
 
       {/* WORKOUT LINK */}
       <Card className="bg-zinc-900 border-zinc-800 shadow-md">
@@ -338,6 +398,9 @@ export function DashboardScreen() {
         onClose={() => setMealModalOpen(false)}
         onSave={handleSaveMeal}
       />
+
+      {/* NEW WEIGHT MODAL */}
+      <WeightEntryModal isOpen={isWeightModalOpen} onClose={() => setWeightModalOpen(false)} />
     </div>
   )
 }

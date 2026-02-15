@@ -432,7 +432,7 @@ function SwipeToDeleteSet({
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
-      className="relative border-b last:border-0 bg-white dark:bg-gray-900 overflow-hidden"
+      className="relative border-b border-zinc-800 last:border-0 bg-zinc-900 overflow-hidden"
     >
       <div className="absolute inset-0 bg-red-500 flex items-center justify-end px-4">
         <Trash2 className="text-white h-4 w-4" />
@@ -446,7 +446,7 @@ function SwipeToDeleteSet({
         onDragEnd={(_, info: PanInfo) => {
           if (info.offset.x < -60) onDelete()
         }}
-        className="relative bg-white dark:bg-gray-900 grid grid-cols-10 gap-2 p-2 items-center z-10"
+        className="relative bg-zinc-900 grid grid-cols-10 gap-2 p-2 items-center z-10"
       >
         <div className="col-span-2 text-center font-mono text-muted-foreground text-sm">
           {index}
@@ -455,7 +455,7 @@ function SwipeToDeleteSet({
           <Input
             type="number"
             placeholder="-"
-            className="text-center h-8 text-sm p-0"
+            className="text-center h-8 text-sm p-0 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-yellow-500"
             value={set.weight}
             onFocus={e => e.target.select()}
             onChange={e => onUpdate('weight', e.target.value === '' ? '' : Number(e.target.value))}
@@ -465,7 +465,7 @@ function SwipeToDeleteSet({
           <Input
             type="number"
             placeholder="-"
-            className="text-center h-8 text-sm p-0"
+            className="text-center h-8 text-sm p-0 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-yellow-500"
             value={set.reps}
             onFocus={e => e.target.select()}
             onChange={e => onUpdate('reps', e.target.value === '' ? '' : Number(e.target.value))}
@@ -477,8 +477,8 @@ function SwipeToDeleteSet({
             onClick={onToggle}
             className={`w-7 h-7 rounded flex items-center justify-center cursor-pointer border transition-colors ${
               set.completed
-                ? 'bg-green-500 border-green-500 text-white'
-                : 'bg-slate-50 border-slate-200'
+                ? 'bg-yellow-500 border-yellow-500 text-black'
+                : 'bg-zinc-800 border-zinc-700 hover:border-zinc-500'
             }`}
           >
             {set.completed && <Check className="h-3 w-3" />}

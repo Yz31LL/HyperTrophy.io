@@ -218,3 +218,100 @@ export function calculateTraineeRisk(
 
   return { level, score, reasons }
 }
+
+// --- 4. DEEP ANALYTICS: PR DETECTION ---
+export interface PersonalRecord {
+  exerciseName: string
+  maxWeight: number
+  maxVolume: number
+  weightDate: Date
+  volumeDate: Date
+}
+
+export function detectPersonalRecords(workouts: Workout[]): Map<string, PersonalRecord> {
+  const prs = new Map<string, PersonalRecord>()
+
+  // Process from oldest to newest to handle historical progression if needed,
+  // but for current PRs, just iterate and keep max.
+  workouts.forEach(workout => {
+    const workoutDate =
+      workout.completedAt?.toDate() || (workout.date ? new Date(workout.date) : null)
+    if (!workoutDate) return
+
+    workout.exercises.forEach(exercise => {
+      const name = exercise.name
+      let existing = prs.get(name)
+
+      if (!existing) {
+        existing = {
+          exerciseName: name,
+          maxWeight: 0,
+          maxVolume: 0,
+          weightDate: workoutDate,
+          volumeDate: workoutDate,
+        }
+        prs.set(name, existing)
+      }
+
+      exercise.sets.forEach(set => {
+        if (!set.completed) return
+
+        // Check Max Weight
+        if (set.weight > existing!.maxWeight) {
+          existing!.maxWeight = set.weight
+          existing!.weightDate = workoutDate
+        }
+
+        // Check Max Set Volume (Weight * Reps)
+        const volume = set.weight * set.reps
+        if (volume > existing!.maxVolume) {
+          existing!.maxVolume = volume
+          existing!.volumeDate = workoutDate
+        }
+      })
+    })
+  })
+
+  return prs
+}
+
+// --- 5. PROGRESSIVE OVERLOAD: TREND DATA ---
+export interface VolumeTrendPoint {
+  date: string
+  volume: number
+  rawDate: Date
+}
+
+export function getVolumeTrendData(workouts: Workout[]): VolumeTrendPoint[] {
+  const dailyVolume = new Map<string, { volume: number; rawDate: Date }>()
+
+  workouts.forEach(workout => {
+    const workoutDate =
+      workout.completedAt?.toDate() || (workout.date ? new Date(workout.date) : null)
+    if (!workoutDate) return
+
+    const dateStr = workoutDate.toISOString().split('T')[0]
+    const current = dailyVolume.get(dateStr) || { volume: 0, rawDate: workoutDate }
+
+    let workoutVol = 0
+    workout.exercises.forEach(ex => {
+      ex.sets.forEach(set => {
+        if (set.completed) {
+          workoutVol += set.weight * set.reps
+        }
+      })
+    })
+
+    current.volume += workoutVol
+    dailyVolume.set(dateStr, current)
+  })
+
+  // Convert to sorted array
+  return Array.from(dailyVolume.entries())
+    .map(([date, data]) => ({
+      date,
+      volume: data.volume,
+      rawDate: data.rawDate,
+    }))
+    .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime())
+}

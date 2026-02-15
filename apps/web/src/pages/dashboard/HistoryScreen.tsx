@@ -14,9 +14,37 @@ import {
 import { db, auth } from '../../lib/firebase'
 import { Button } from '@repo/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/Card'
-import { ArrowLeft, Dumbbell, Utensils, Calendar, Clock, Flame, Pencil, Trash2 } from 'lucide-react'
-import { format } from 'date-fns'
+import {
+  ArrowLeft,
+  Dumbbell,
+  Utensils,
+  Calendar,
+  Clock,
+  Flame,
+  Pencil,
+  Trash2,
+  Trophy,
+  TrendingUp,
+} from 'lucide-react'
+import { format, parseISO } from 'date-fns'
 import { MealEntryModal, MealFormValues } from './MealEntryModal'
+import {
+  detectPersonalRecords,
+  getVolumeTrendData,
+  PersonalRecord,
+  VolumeTrendPoint,
+  Workout,
+  Exercise,
+} from '../../lib/analytics'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts'
 
 // --- TYPES ---
 interface WorkoutLog {
@@ -26,6 +54,7 @@ interface WorkoutLog {
   durationMinutes: number
   caloriesBurned: number
   completedAt: Timestamp | null
+  exercises: Exercise[]
 }
 
 interface MealLog {
@@ -46,6 +75,8 @@ export function HistoryScreen() {
   const [workouts, setWorkouts] = useState<WorkoutLog[]>([])
   const [meals, setMeals] = useState<MealLog[]>([])
   const [loading, setLoading] = useState(true)
+  const [prs, setPrs] = useState<Map<string, PersonalRecord>>(new Map())
+  const [trends, setTrends] = useState<VolumeTrendPoint[]>([])
 
   // --- EDITING STATE ---
   const [isMealModalOpen, setMealModalOpen] = useState(false)
@@ -73,6 +104,14 @@ export function HistoryScreen() {
       const mealSnapshot = await getDocs(mealsQuery)
       const mealData = mealSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MealLog[]
       setMeals(mealData)
+
+      // 3. Analytics
+      if (workoutData.length > 0) {
+        // Convert to shared Workout type for analytics
+        const typedWorkouts = workoutData as unknown as Workout[]
+        setPrs(detectPersonalRecords(typedWorkouts))
+        setTrends(getVolumeTrendData(typedWorkouts))
+      }
     } catch (error) {
       console.error('Error fetching history:', error)
     } finally {
@@ -192,6 +231,48 @@ export function HistoryScreen() {
         </button>
       </div>
 
+      {/* TREND CHART (Workouts Tab) */}
+      {activeTab === 'workouts' && trends.length > 0 && (
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-cyber flex items-center gap-2 text-zinc-400">
+              <TrendingUp className="h-4 w-4 text-blue-500" />
+              Progressive Overload (Weekly Volume)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-48 w-full mt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trends}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#52525b"
+                    fontSize={10}
+                    tickFormatter={str => format(parseISO(str), 'MMM d')}
+                  />
+                  <YAxis stroke="#52525b" fontSize={10} hide />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#09090b', border: '1px solid #27272a' }}
+                    labelStyle={{ color: '#9ca3af', fontSize: '10px' }}
+                    itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
+                    labelFormatter={label => format(parseISO(label), 'EEEE, MMM d')}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="volume"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dot={{ fill: '#3b82f6', r: 3 }}
+                    activeDot={{ r: 5, stroke: '#fff' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* CONTENT LIST */}
       <div className="space-y-4">
         {loading ? (
@@ -232,7 +313,46 @@ export function HistoryScreen() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex gap-4 text-xs text-zinc-400">
+                  {/* EXERCISES & PRs */}
+                  <div className="mt-4 space-y-3">
+                    {workout.exercises?.map((ex, i) => {
+                      const exPr = prs.get(ex.name)
+                      return (
+                        <div key={i} className="space-y-1">
+                          <div className="text-xs font-bold text-zinc-300 flex justify-between">
+                            {ex.name}
+                            <span className="text-[10px] text-zinc-500 uppercase">
+                              {exPr?.maxWeight}kg Record
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {ex.sets.map((set, si) => {
+                              const isWeightPr = set.completed && set.weight === exPr?.maxWeight
+                              const isVolPr =
+                                set.completed && set.weight * set.reps === exPr?.maxVolume
+
+                              return (
+                                <div
+                                  key={si}
+                                  className={`text-[10px] px-2 py-1 rounded flex items-center gap-1 ${
+                                    set.completed
+                                      ? 'bg-zinc-800 text-zinc-300'
+                                      : 'bg-zinc-900 border border-zinc-800 text-zinc-600'
+                                  }`}
+                                >
+                                  {set.weight}kg × {set.reps}
+                                  {(isWeightPr || isVolPr) && (
+                                    <Trophy className="h-2.5 w-2.5 text-yellow-500 animate-pulse" />
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="flex gap-4 text-xs text-zinc-400 mt-4">
                     <span className="bg-zinc-800 px-2 py-1 rounded">{workout.category}</span>
                     <span className="flex items-center gap-1 bg-zinc-800 px-2 py-1 rounded">
                       <Clock className="h-3 w-3" /> {workout.durationMinutes} min

@@ -62,6 +62,7 @@ _Goal: Capture biometrics and generate the "Verified Plan" (No AI)._
   - [x] Implement **Macro Splitter** based on Archetypes.
   - [x] **Test:** Add **Property-Based Tests** (using `fast-check`) to prove math never returns NaN or negative calories (Rubric: Quality).
   - [x] **Test:** Setup **Stryker Mutator** for mutation testing of the Rules Engine.
+  - [x] **Test:** Apply **Test-Driven Development (TDD)** for advanced fitness formulas (1RM, Ideal Body Weight).
 
 - [x] **Dashboard (Trainee View)**
   - [x] Fetch User Profile.
@@ -156,12 +157,13 @@ _Goal: The Dual-Sided Marketplace features._
 
 _Goal: Move from "Tracking" to "Insight"._
 
-- [ ] **Exercise PRs (Personal Records)**
-  - [ ] Logic: Auto-detect heaviest lift or highest volume per exercise.
-  - [ ] UI: Medal icons next to PR lifts in the log.
-- [ ] **Progressive Overload Trends**
-  - [ ] Logic: Track 1RM estimates or Volume over time.
-  - [ ] Visual: Trend lines showing strength growth across macro-cycles.
+- [x] **Exercise PRs (Personal Records)**
+  - [x] Logic: Auto-detect heaviest lift or highest volume per exercise.
+  - [x] UI: Medal icons next to PR lifts in the log.
+- [x] **Progressive Overload Trends**
+  - [x] **Logic:** Track **1RM (One-Rep Max)** estimates (Implemented via TDD).
+  - [x] Logic: Track Volume over time.
+  - [x] Visual: Trend lines showing strength growth across macro-cycles.
 
 ---
 
@@ -175,7 +177,7 @@ _Goal: Move from "Tracking" to "Insight"._
 
 ---
 
-## **Phase 8: Launch**
+## **Phase 11: Launch**
 
 - [ ] **Beta Testing:** Onboard 5 Trainers + 5 Trainees.
 - [ ] **App Store Submission:** Prepare assets (Screenshots, Icon).

@@ -1,16 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence, PanInfo } from 'framer-motion'
-import { Plus, Trash2, Check, ArrowLeft, Timer, Flame } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 
 // --- IMPORTS ---
 import { db, auth } from '../../lib/firebase'
 import { useProfile } from '../../hooks/useProfile'
-import { Button } from '@repo/ui/Button'
-import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/Card'
-import { Input } from '@repo/ui/Input'
-import { Progress } from '@repo/ui/Progress'
+import { WorkoutNav } from './WorkoutNav'
+import { ExerciseCard } from './ExerciseCard'
 
 // --- DATA: EXERCISE DATABASE ---
 const EXERCISE_DATABASE = {
@@ -101,13 +98,7 @@ export function WorkoutSession() {
   const [isSaving, setIsSaving] = useState(false)
   const [category, setCategory] = useState<CategoryKey>('upper')
   const [sessionName, setSessionName] = useState('')
-
-  // Initialize with some default exercises based on category (optional)
-  const [exercises, setExercises] = useState<ExerciseLog[]>([
-    createExercise('Bench Press (Flat)'), // Default starter
-  ])
-
-  // New State for the "Add Exercise" dropdown
+  const [exercises, setExercises] = useState<ExerciseLog[]>([createExercise('Bench Press (Flat)')])
   const [selectedExerciseToAdd, setSelectedExerciseToAdd] = useState('')
 
   // --- TIMER STATE ---
@@ -129,16 +120,13 @@ export function WorkoutSession() {
     const met = WORKOUT_CATEGORIES[category].met
     const durationMinutes = elapsedSeconds / 60
 
-    // 1. Time-based MET (base)
     const baseKcalPerMin = (met * 3.5 * userWeightKg) / 200
     const timeBasedCals = baseKcalPerMin * durationMinutes
 
-    // 2. Training-based (Volume bonus)
     let volumeCals = 0
     exercises.forEach(ex => {
       ex.sets.forEach(set => {
         if (set.completed && typeof set.weight === 'number' && typeof set.reps === 'number') {
-          // approx 0.005 per kg*rep for weightlifting (including metabolic efficiency)
           volumeCals += set.weight * set.reps * 0.005
         }
       })
@@ -156,7 +144,7 @@ export function WorkoutSession() {
   }
 
   // --- ACTIONS ---
-  const updateSet = (
+  const handleUpdateSet = (
     exIndex: number,
     setIndex: number,
     field: 'weight' | 'reps',
@@ -169,16 +157,15 @@ export function WorkoutSession() {
     })
   }
 
-  const toggleSetComplete = (exIndex: number, setIndex: number) => {
+  const handleToggleSet = (exIndex: number, setIndex: number) => {
     setExercises(prev => {
       const next = structuredClone(prev)
-      const set = next[exIndex].sets[setIndex]
-      set.completed = !set.completed
+      next[exIndex].sets[setIndex].completed = !next[exIndex].sets[setIndex].completed
       return next
     })
   }
 
-  const removeSet = (exIndex: number, setId: string) => {
+  const handleRemoveSet = (exIndex: number, setId: string) => {
     setExercises(prev => {
       const next = structuredClone(prev)
       next[exIndex].sets = next[exIndex].sets.filter(s => s.id !== setId)
@@ -186,7 +173,7 @@ export function WorkoutSession() {
     })
   }
 
-  const addSet = (exIndex: number) => {
+  const handleAddSet = (exIndex: number) => {
     setExercises(prev => {
       const next = structuredClone(prev)
       next[exIndex].sets.push(createEmptySet())
@@ -194,11 +181,18 @@ export function WorkoutSession() {
     })
   }
 
-  // NEW: Add a specific exercise from the list
   const handleAddExercise = () => {
     if (!selectedExerciseToAdd) return
     setExercises(prev => [...prev, createExercise(selectedExerciseToAdd)])
-    setSelectedExerciseToAdd('') // Reset dropdown
+    setSelectedExerciseToAdd('')
+  }
+
+  const handleRemoveExercise = (exIndex: number) => {
+    setExercises(prev => {
+      const next = [...prev]
+      next.splice(exIndex, 1)
+      return next
+    })
   }
 
   // --- FIREBASE SAVE ---
@@ -239,252 +233,115 @@ export function WorkoutSession() {
     }
   }
 
-  // Logic for Progress Bar
-  const totalSets = exercises.reduce((acc, ex) => acc + ex.sets.length, 0)
-  const completedSets = exercises.reduce(
-    (acc, ex) => acc + ex.sets.filter(s => s.completed).length,
-    0
-  )
-  const progress = totalSets === 0 ? 0 : (completedSets / totalSets) * 100
-
   return (
-    <div className="min-h-screen bg-black pb-32 text-white">
-      {/* HEADER */}
+    <div className="bg-[#09090b] text-gray-800 dark:text-gray-200 min-h-screen font-sans selection:bg-[#1978e5] selection:text-black antialiased">
+      <style>{`
+        .glass-panel {
+            background: rgba(24, 24, 27, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .font-cyber {
+            font-family: 'Orbitron', sans-serif;
+        }
+      `}</style>
 
-      <div className="sticky top-0 z-20 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 shadow-sm">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/dashboard')}
-              className="text-zinc-400 hover:text-white"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-            </Button>
+      <WorkoutNav
+        elapsedTimeLabel={formatTime(elapsedSeconds)}
+        liveCalories={liveCalories}
+        isSaving={isSaving}
+        onBack={() => navigate('/dashboard')}
+        onFinish={handleFinish}
+      />
 
-            <div className="flex flex-col items-center">
-              <span className="font-bold text-sm text-white">Active Session</span>
-              <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono">
-                <span className="flex items-center gap-1">
-                  <Timer className="h-3 w-3" /> {formatTime(elapsedSeconds)}
-                </span>
-                <span className="flex items-center gap-1 text-yellow-500 font-bold">
-                  <Flame className="h-3 w-3" /> {liveCalories} kcal
-                </span>
-              </div>
-            </div>
-
-            <Button
-              size="sm"
-              onClick={handleFinish}
-              disabled={isSaving}
-              className="bg-yellow-500 text-black hover:bg-yellow-400"
-            >
-              {isSaving ? 'Saving...' : 'Finish'}
-            </Button>
-          </div>
-
-          {/* Category Selector */}
-          <div className="mb-2">
-            <label className="text-[10px] font-bold text-zinc-500 ml-1 uppercase">
+      <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-gray-500 dark:text-gray-500 uppercase tracking-wider ml-1">
               Workout Type
             </label>
-
-            <select
-              value={category}
-              onChange={e => setCategory(e.target.value as CategoryKey)}
-              className="w-full mt-1 p-2 rounded-md border border-zinc-800 bg-zinc-900 text-white text-sm focus:ring-2 focus:ring-yellow-500 outline-none"
-            >
-              {Object.entries(WORKOUT_CATEGORIES).map(([key, value]) => (
-                <option key={key} value={key}>
-                  {value.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <Progress value={progress} className="h-1.5 bg-zinc-800" />
-        </div>
-      </div>
-
-      {/* EXERCISE LIST */}
-      <div className="p-4 space-y-6 max-w-md mx-auto">
-        {/* Name Input */}
-        <div className="mb-4">
-          <Input
-            placeholder="Session Name (e.g. Morning Lift)"
-            value={sessionName}
-            onChange={e => setSessionName(e.target.value)}
-            className="bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-500"
-          />
-        </div>
-
-        {exercises.map((exercise, exIndex) => (
-          <Card
-            key={exercise.id}
-            className="overflow-hidden border-t-4 border-t-yellow-500 shadow-sm bg-zinc-950 border-x-zinc-800 border-b-zinc-800"
-          >
-            <CardHeader className="bg-zinc-900/50 py-3 border-b border-zinc-800">
-              <CardTitle className="text-base flex justify-between items-center text-white">
-                {exercise.name}
-                <button
-                  onClick={() => {
-                    const newExercises = [...exercises]
-                    newExercises.splice(exIndex, 1)
-                    setExercises(newExercises)
-                  }}
-                  className="text-red-400 hover:text-red-500"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {/* Header */}
-              <div className="grid grid-cols-10 gap-2 p-2 text-[10px] font-bold tracking-wider text-center text-zinc-500 border-b border-zinc-800 bg-zinc-900/30">
-                <div className="col-span-2">SET</div>
-                <div className="col-span-3">KG</div>
-                <div className="col-span-3">REPS</div>
-                <div className="col-span-2">DONE</div>
-              </div>
-
-              {/* Sets */}
-              <AnimatePresence initial={false}>
-                {exercise.sets.map((set, setIndex) => (
-                  <SwipeToDeleteSet
-                    key={set.id}
-                    index={setIndex + 1}
-                    set={set}
-                    onUpdate={(field, val) => updateSet(exIndex, setIndex, field, val)}
-                    onDelete={() => removeSet(exIndex, set.id)}
-                    onToggle={() => toggleSetComplete(exIndex, setIndex)}
-                  />
-                ))}
-              </AnimatePresence>
-
-              <Button
-                variant="ghost"
-                className="w-full rounded-none border-t border-zinc-800 h-10 text-xs text-zinc-400 hover:text-yellow-500 hover:bg-zinc-900"
-                onClick={() => addSet(exIndex)}
+            <div className="relative group">
+              <select
+                value={category}
+                onChange={e => setCategory(e.target.value as CategoryKey)}
+                className="w-full bg-white dark:bg-[#18181b] border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 appearance-none focus:outline-none focus:ring-2 focus:ring-[#1978e5] focus:border-transparent shadow-sm transition-all cursor-pointer font-cyber tracking-wide text-sm"
               >
-                <Plus className="h-3 w-3 mr-2" /> Add Set
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+                {Object.entries(WORKOUT_CATEGORIES).map(([key, value]) => (
+                  <option key={key} value={key}>
+                    {value.label}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500 dark:text-gray-400">
+                <span className="material-icons-round">expand_more</span>
+              </div>
+            </div>
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Session Name (e.g. Morning Lift)"
+              value={sessionName}
+              onChange={e => setSessionName(e.target.value)}
+              className="w-full bg-transparent border-b-2 border-gray-300 dark:border-white/10 text-xl md:text-2xl font-bold text-center placeholder-gray-400 dark:placeholder-white/20 text-gray-900 dark:text-white py-2 focus:outline-none focus:border-[#1978e5] transition-colors font-cyber"
+            />
+          </div>
+        </div>
 
-        {/* --- ADD EXERCISE SECTION --- */}
-        <div className="pt-4 border-t border-zinc-800 border-dashed">
-          <label className="text-xs font-semibold text-zinc-500 mb-2 block">
-            ADD NEXT EXERCISE
+        <div className="space-y-8">
+          {exercises.map((exercise, exIndex) => (
+            <ExerciseCard
+              key={exercise.id}
+              exercise={exercise}
+              exIndex={exIndex}
+              onRemoveExercise={() => handleRemoveExercise(exIndex)}
+              onAddSet={() => handleAddSet(exIndex)}
+              onRemoveSet={setId => handleRemoveSet(exIndex, setId)}
+              onUpdateSet={(setIndex, field, val) => handleUpdateSet(exIndex, setIndex, field, val)}
+              onToggleSet={setIndex => handleToggleSet(exIndex, setIndex)}
+            />
+          ))}
+        </div>
+
+        <div className="space-y-2 pt-4">
+          <label className="text-xs font-bold text-gray-500 dark:text-gray-500 uppercase tracking-wider ml-1 font-cyber">
+            Add Next Exercise
           </label>
-          <div className="flex gap-2">
-            <select
-              className="flex-1 p-2 rounded-md border border-zinc-800 bg-zinc-900 text-white text-sm"
-              value={selectedExerciseToAdd}
-              onChange={e => setSelectedExerciseToAdd(e.target.value)}
-            >
-              <option value="" disabled>
-                Select movement...
-              </option>
-              {Object.entries(EXERCISE_DATABASE).map(([category, exercises]) => (
-                <optgroup key={category} label={category}>
-                  {exercises.map(name => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-            <Button
+          <div className="flex gap-3">
+            <div className="relative flex-grow">
+              <select
+                value={selectedExerciseToAdd}
+                onChange={e => setSelectedExerciseToAdd(e.target.value)}
+                className="w-full bg-white dark:bg-[#18181b] border border-gray-300 dark:border-white/10 text-gray-500 dark:text-gray-400 rounded-xl px-4 py-3.5 appearance-none focus:outline-none focus:ring-2 focus:ring-[#06B6D4] focus:border-transparent shadow-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors font-cyber tracking-wide text-sm"
+              >
+                <option value="">Select movement...</option>
+                {Object.entries(EXERCISE_DATABASE).map(([cat, exList]) => (
+                  <optgroup key={cat} label={cat}>
+                    {exList.map(name => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500 dark:text-gray-400">
+                <span className="material-icons-round">search</span>
+              </div>
+            </div>
+            <button
               onClick={handleAddExercise}
               disabled={!selectedExerciseToAdd}
-              className="bg-yellow-500 text-black hover:bg-yellow-400"
+              className="bg-[#1978e5] hover:bg-[#FACC15] text-black w-14 rounded-xl flex items-center justify-center shadow-[0_0_10px_rgba(250,204,21,0.2)] transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50"
             >
-              <Plus className="h-4 w-4" />
-            </Button>
+              <Plus className="h-6 w-6" />
+            </button>
           </div>
         </div>
-      </div>
+
+        <div className="h-12"></div>
+      </main>
     </div>
-  )
-}
-
-// --- SUB-COMPONENT: Swipeable Set Row ---
-function SwipeToDeleteSet({
-  set,
-  index,
-  onDelete,
-  onToggle,
-  onUpdate,
-}: {
-  set: WorkoutSet
-  index: number
-  onDelete: () => void
-  onToggle: () => void
-  onUpdate: (field: 'weight' | 'reps', val: number | '') => void
-}) {
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      className="relative border-b border-zinc-800 last:border-0 bg-zinc-900 overflow-hidden"
-    >
-      <div className="absolute inset-0 bg-red-500 flex items-center justify-end px-4">
-        <Trash2 className="text-white h-4 w-4" />
-      </div>
-
-      <motion.div
-        drag="x"
-        dragConstraints={{ left: -80, right: 0 }}
-        dragElastic={0.1}
-        dragSnapToOrigin
-        onDragEnd={(_, info: PanInfo) => {
-          if (info.offset.x < -60) onDelete()
-        }}
-        className="relative bg-zinc-900 grid grid-cols-10 gap-2 p-2 items-center z-10"
-      >
-        <div className="col-span-2 text-center font-mono text-muted-foreground text-sm">
-          {index}
-        </div>
-        <div className="col-span-3">
-          <Input
-            type="number"
-            placeholder="-"
-            className="text-center h-8 text-sm p-0 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-yellow-500"
-            value={set.weight}
-            onFocus={e => e.target.select()}
-            onChange={e => onUpdate('weight', e.target.value === '' ? '' : Number(e.target.value))}
-          />
-        </div>
-        <div className="col-span-3">
-          <Input
-            type="number"
-            placeholder="-"
-            className="text-center h-8 text-sm p-0 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-yellow-500"
-            value={set.reps}
-            onFocus={e => e.target.select()}
-            onChange={e => onUpdate('reps', e.target.value === '' ? '' : Number(e.target.value))}
-          />
-        </div>
-        <div className="col-span-2 flex justify-center">
-          <motion.div
-            whileTap={{ scale: 0.9 }}
-            onClick={onToggle}
-            className={`w-7 h-7 rounded flex items-center justify-center cursor-pointer border transition-colors ${
-              set.completed
-                ? 'bg-yellow-500 border-yellow-500 text-black'
-                : 'bg-zinc-800 border-zinc-700 hover:border-zinc-500'
-            }`}
-          >
-            {set.completed && <Check className="h-3 w-3" />}
-          </motion.div>
-        </div>
-      </motion.div>
-    </motion.div>
   )
 }

@@ -29,6 +29,10 @@ import { EnergyFlux } from './EnergyFlux'
 import { DashboardStatCard } from './DashboardStatCard'
 import { ActionButtonSection } from './ActionButtonSection'
 import { LoadingScreen } from '../../components/ui/LoadingScreen'
+import { InviteCard } from './InviteCard'
+import { Bell } from 'lucide-react'
+import { NotificationPanel } from '../../components/NotificationPanel'
+import { useNotifications } from '../../hooks/useNotifications'
 
 export function DashboardScreen() {
   const [isMealModalOpen, setMealModalOpen] = useState(false)
@@ -39,6 +43,8 @@ export function DashboardScreen() {
   const [isPlateau, setIsPlateau] = useState(false)
   const [weightHistory, setWeightHistory] = useState<WeightLog[]>([])
   const [hasCelebrated, setHasCelebrated] = useState(false)
+  const [isNotificationsOpen, setNotificationsOpen] = useState(false)
+  const { unreadCount } = useNotifications()
 
   // --- 1. FETCH MEALS ---
   useEffect(() => {
@@ -232,7 +238,23 @@ export function DashboardScreen() {
               <span className="text-white">{user?.displayName?.split(' ')[0] || 'Member'}</span>
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
+            <div className="relative">
+              <Bell
+                className={`h-6 w-6 cursor-pointer transition-colors ${isNotificationsOpen ? 'text-yellow-500' : 'text-slate-400 hover:text-white'}`}
+                onClick={() => setNotificationsOpen(!isNotificationsOpen)}
+              />
+              {unreadCount > 0 && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center text-[10px] text-black font-bold">
+                  {unreadCount}
+                </div>
+              )}
+              <NotificationPanel
+                isOpen={isNotificationsOpen}
+                onClose={() => setNotificationsOpen(false)}
+              />
+            </div>
+
             <span className="px-3 py-1 rounded-full bg-[#00ff9d]/10 border border-[#00ff9d]/20 text-[#00ff9d] text-xs font-bold uppercase tracking-wider animate-pulse">
               System Online
             </span>
@@ -248,11 +270,18 @@ export function DashboardScreen() {
         {/* ALERT SYSTEM */}
         <PlateauAlert isDetected={isPlateau} />
 
-        <EnergyFlux
-          totalConsumed={totalConsumed}
-          tdee={tdee}
-          dailyCaloriesBurned={dailyCaloriesBurned}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            <EnergyFlux
+              totalConsumed={totalConsumed}
+              tdee={tdee}
+              dailyCaloriesBurned={dailyCaloriesBurned}
+            />
+          </div>
+          <div className="md:col-span-1">
+            <InviteCard role="trainee" className="h-full" />
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-4 space-y-6">

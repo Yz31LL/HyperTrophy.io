@@ -98,13 +98,13 @@ _Goal: Allow users to log the work they do._
 
 _Goal: Visual feedback and Plateau detection._
 
-- [ ] **Muscle Heatmap**
-  - [ ] Create SVG mapping of muscle groups.
-  - [ ] Logic: `getWeeklyVolume()` -> `highlightMuscleGroup()`.
-  - [ ] **A11y:** Ensure Heatmap has a tabular data fallback for screen readers (Rubric: Design L5).
-- [ ] **Plateau Detector**
-  - [ ] Logic: `avg_weight_last_7` vs `avg_weight_prev_7`.
-  - [ ] UI: "Plateau Detected" warning card with entrance animation.
+- [x] **Muscle Heatmap**
+  - [x] Create SVG mapping of muscle groups.
+  - [x] Logic: `getWeeklyVolume()` -> `highlightMuscleGroup()`.
+  - [x] **A11y:** Ensure Heatmap has a tabular data fallback for screen readers (Rubric: Design L5).
+- [x] **Plateau Detector**
+  - [x] Logic: `avg_weight_last_7` vs `avg_weight_prev_7`.
+  - [] UI: "Plateau Detected" warning card with entrance animation.
 
 ---
 
@@ -113,7 +113,7 @@ _Goal: Visual feedback and Plateau detection._
 _Goal: Upgrade current UI to "Premium" standard._
 
 - [ ] **Design System Refinement**
-  - [ ] Define standard Token hierarchy (Colors, Spacing, Typography).
+  - [x] Define standard Token hierarchy (Colors, Spacing, Typography).
   - [ ] Ensure all text meets **WCAG AA Contrast** ratios.
 - [ ] **Motion Implementation**
   - [ ] Add **Page Transitions** (Fade/Slide) between Onboarding steps.

@@ -8,6 +8,11 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/Card'
+import { WeightLog } from '../../lib/analytics'
+
+interface WeightChartProps {
+  history?: WeightLog[]
+}
 
 // Mock data for Phase 2 (Phase 3 will fetch real history)
 const data = [
@@ -20,7 +25,18 @@ const data = [
   { date: 'Sun', weight: 79.5 },
 ]
 
-export function WeightChart() {
+export function WeightChart({ history }: WeightChartProps) {
+  // Use history if available, else fallback to mock data for now
+  const chartData =
+    history && history.length > 0
+      ? history
+          .map(log => ({
+            date: log.date.toDate().toLocaleDateString('en-US', { weekday: 'short' }),
+            weight: log.weight,
+          }))
+          .reverse()
+      : data
+
   return (
     <Card className="col-span-2">
       <CardHeader>
@@ -28,7 +44,7 @@ export function WeightChart() {
       </CardHeader>
       <CardContent className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
+          <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="date"

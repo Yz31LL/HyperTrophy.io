@@ -12,24 +12,29 @@ import {
   calculateMacros,
 } from '../../lib/health-calc'
 import { WeightChart } from './WeightChart'
-import {
-  collection,
-  addDoc,
-  serverTimestamp,
-  onSnapshot,
-  query,
-  where,
-  Timestamp,
-} from 'firebase/firestore'
+import { collection, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore'
 import { db, auth } from '../../lib/firebase'
 import { NutritionDonutChart } from './NutritionDonutChart'
 import { MealEntryModal, MealFormValues } from './MealEntryModal'
+import { MuscleHeatmap } from './MuscleHeatmap'
+import { PlateauAlert } from './PlateauAlert'
+import {
+  calculateWeeklyVolume,
+  detectWeightPlateau,
+  Workout,
+  WeightLog,
+  MuscleGroup,
+} from '../../lib/analytics'
 
 export function DashboardScreen() {
   const [isMealModalOpen, setMealModalOpen] = useState(false)
   const [consumedMacros, setConsumedMacros] = useState({ protein: 0, carbs: 0, fat: 0 })
   const [dailyCaloriesBurned, setDailyCaloriesBurned] = useState(0)
+  const [volumeData, setVolumeData] = useState<Record<MuscleGroup, number> | null>(null)
+  const [isPlateau, setIsPlateau] = useState(false)
+  const [weightHistory, setWeightHistory] = useState<WeightLog[]>([])
 
+  // --- 1. FETCH MEALS ---
   useEffect(() => {
     const firebaseUser = auth.currentUser
     if (!firebaseUser) return
@@ -52,29 +57,78 @@ export function DashboardScreen() {
     return () => unsub()
   }, [])
 
+  // --- 2. FETCH WORKOUTS (Heatmap & Calories) ---
+  /// --- 2. FETCH WORKOUTS (DEBUG MODE) ---
   useEffect(() => {
     const firebaseUser = auth.currentUser
     if (!firebaseUser) return
 
-    // 1. Calculate the timestamp for "Midnight Today"
-    const now = new Date()
-    now.setHours(0, 0, 0, 0) // Reset time to 00:00:00
-    const startOfToday = Timestamp.fromDate(now)
-
-    // 2. Query: Fetch workouts ONLY where completedAt >= Midnight Today
     const workoutsRef = collection(db, 'users', firebaseUser.uid, 'workouts')
-    const q = query(workoutsRef, where('completedAt', '>=', startOfToday))
 
-    const unsub = onSnapshot(q, snapshot => {
+    const unsub = onSnapshot(workoutsRef, snapshot => {
+      const allWorkouts: Workout[] = snapshot.docs.map(
+        doc =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          }) as Workout
+      )
+
       let totalBurnedToday = 0
 
-      snapshot.forEach(doc => {
-        // Safety check: ensure caloriesBurned exists
-        const data = doc.data()
-        totalBurnedToday += Number(data.caloriesBurned) || 0
+      // Set "Start of Today" to Midnight
+      const now = new Date()
+      now.setHours(0, 0, 0, 0)
+
+      allWorkouts.forEach(workout => {
+        let workoutDate: Date | null = null
+        const cals = Number(workout.caloriesBurned) || 0
+
+        // Debug Log per workout
+        console.log(`- Workout: ${workout.name}, Cals: ${cals}, DateRaw:`, workout.completedAt)
+
+        // Date Logic
+        if (workout.completedAt && typeof workout.completedAt.toDate === 'function') {
+          workoutDate = workout.completedAt.toDate()
+        } else if (workout.date) {
+          workoutDate = new Date(workout.date)
+        }
+
+        // If date is valid and is today (or future)
+        if (workoutDate && workoutDate >= now) {
+          totalBurnedToday += cals
+        }
       })
 
+      // FIX: Strictly show Today's calories
       setDailyCaloriesBurned(totalBurnedToday)
+
+      // Calculate Heatmap
+      const vol = calculateWeeklyVolume(allWorkouts)
+      setVolumeData(vol)
+    })
+
+    return () => unsub()
+  }, [])
+
+  // --- 3. FETCH WEIGHT (Plateau Detection) ---
+  useEffect(() => {
+    const firebaseUser = auth.currentUser
+    if (!firebaseUser) return
+
+    const weightRef = collection(db, 'users', firebaseUser.uid, 'weight_logs')
+
+    const unsub = onSnapshot(weightRef, snapshot => {
+      const logs: WeightLog[] = snapshot.docs.map(doc => ({
+        date: doc.data().date,
+        weight: Number(doc.data().weight),
+      }))
+
+      logs.sort((a, b) => b.date.toMillis() - a.date.toMillis())
+      setWeightHistory(logs)
+
+      const hasPlateau = detectWeightPlateau(logs)
+      setIsPlateau(hasPlateau)
     })
 
     return () => unsub()
@@ -85,7 +139,6 @@ export function DashboardScreen() {
 
   if (loading) return <div className="p-8 text-center">Loading your plan...</div>
 
-  // If no profile exists, force them to onboarding
   if (!profile) {
     return (
       <div className="p-8 text-center space-y-4">
@@ -97,12 +150,10 @@ export function DashboardScreen() {
       </div>
     )
   }
+
   const handleSaveMeal = async (data: MealFormValues) => {
     const firebaseUser = auth.currentUser
-    if (!firebaseUser) {
-      console.error('User not logged in')
-      return
-    }
+    if (!firebaseUser) return
 
     try {
       await addDoc(collection(db, 'users', firebaseUser.uid, 'meals'), {
@@ -116,14 +167,11 @@ export function DashboardScreen() {
           (Number(data.fat) || 0) * 9,
         createdAt: serverTimestamp(),
       })
-
-      console.log('Meal saved to Firebase')
     } catch (error) {
       console.error('Error saving meal:', error)
     }
   }
 
-  // Recalculate targets based on the profile data
   const bmr = calculateBMR(profile)
   const tdee = calculateTDEE(bmr, profile.activityLevel)
   const targetCalories = calculateTargetCalories(tdee, profile.goal)
@@ -131,6 +179,7 @@ export function DashboardScreen() {
 
   return (
     <div className="p-4 max-w-4xl mx-auto space-y-6">
+      {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Hi, {user?.displayName}</h1>
@@ -141,30 +190,27 @@ export function DashboardScreen() {
         </Button>
       </div>
 
-      {/* Primary Stats & Progress Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* 1. Macro Progress (Donut Chart) */}
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Activity className="h-4 w-4 text-blue-500" /> Macro Progress
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center min-h-[240px]">
-            <NutritionDonutChart consumed={consumedMacros} />
-          </CardContent>
-        </Card>
+      {/* ALERT SYSTEM */}
+      <PlateauAlert isDetected={isPlateau} />
 
-        {/* 2. Detailed Stats Grid */}
+      {/* MAIN STATS GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* 1. HEATMAP (Left Column) */}
+        {volumeData && (
+          <div className="md:col-span-1">
+            <MuscleHeatmap volumeData={volumeData} />
+          </div>
+        )}
+
+        {/* 2. DETAILED STATS (Center/Right Columns) */}
         <div className="md:col-span-2 grid grid-cols-2 gap-4">
-          {/* Calories Card */}
+          {/* Calories Burned */}
           <Card>
             <CardHeader className="p-4 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Flame className="h-4 w-4 text-red-500" /> Burned (Today)
               </CardTitle>
             </CardHeader>
-
             <CardContent className="p-4 pt-0">
               <div className="text-2xl font-bold text-red-500">
                 {dailyCaloriesBurned} <span className="text-sm text-muted-foreground">kcal</span>
@@ -173,7 +219,7 @@ export function DashboardScreen() {
             </CardContent>
           </Card>
 
-          {/* Protein Card */}
+          {/* Protein */}
           <Card>
             <CardHeader className="p-4 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -186,31 +232,7 @@ export function DashboardScreen() {
             </CardContent>
           </Card>
 
-          {/* Fats Card */}
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500" /> Fats
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="text-2xl font-bold text-green-600">{consumedMacros.fat}g</div>
-              <p className="text-xs text-muted-foreground">target: {macros.fat}g</p>
-            </CardContent>
-          </Card>
-
-          {/* Calories Burned Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Calories Burned</CardTitle>
-            </CardHeader>
-
-            <CardContent>
-              <div className="text-2xl font-bold text-red-500">{dailyCaloriesBurned} kcal</div>
-            </CardContent>
-          </Card>
-
-          {/* Carbs Card */}
+          {/* Carbs */}
           <Card>
             <CardHeader className="p-4 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -222,15 +244,40 @@ export function DashboardScreen() {
               <p className="text-xs text-muted-foreground">target: {macros.carbs}g</p>
             </CardContent>
           </Card>
+
+          {/* Fats */}
+          <Card>
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500" /> Fats
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className="text-2xl font-bold text-green-600">{consumedMacros.fat}g</div>
+              <p className="text-xs text-muted-foreground">target: {macros.fat}g</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 3. MACRO PROGRESS (Full Width or Side) */}
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Activity className="h-4 w-4 text-blue-500" /> Macro Progress
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center min-h-[240px]">
+            <NutritionDonutChart consumed={consumedMacros} />
+          </CardContent>
+        </Card>
+
+        {/* 4. WEIGHT CHART (Remaining width) */}
+        <div className="md:col-span-2">
+          <WeightChart history={weightHistory} />
         </div>
       </div>
 
-      {/* Weight Chart section */}
-      <div className="w-full">
-        <WeightChart />
-      </div>
-
-      {/* Action Button */}
+      {/* LOG MEAL BUTTON */}
       <Button
         onClick={() => setMealModalOpen(true)}
         className="w-full bg-green-600 hover:bg-green-700 shadow-lg transition-transform active:scale-[0.98]"
@@ -238,7 +285,7 @@ export function DashboardScreen() {
         Log Nutrition +
       </Button>
 
-      {/* Workout Link section */}
+      {/* WORKOUT LINK */}
       <Card className="border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/20">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
@@ -256,7 +303,6 @@ export function DashboardScreen() {
         </CardContent>
       </Card>
 
-      {/* Modal */}
       <MealEntryModal
         isOpen={isMealModalOpen}
         onClose={() => setMealModalOpen(false)}

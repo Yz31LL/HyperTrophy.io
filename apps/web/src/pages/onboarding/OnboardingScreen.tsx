@@ -135,8 +135,10 @@ export function OnboardingScreen() {
     }
   }
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4">
-      <Card className="max-w-2xl mx-auto">
+    <div className="min-h-screen w-full bg-black flex items-center justify-center p-4">
+      {/* Background Gradient Effect */}
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-yellow-500/10 via-black to-black pointer-events-none" />
+      <Card className="w-full max-w-lg z-10 bg-zinc-950 border-zinc-800 shadow-2xl">
         <CardHeader>
           <div className="flex justify-between items-center mb-4">
             {STEPS.map((s, i) => (
@@ -178,8 +180,8 @@ export function OnboardingScreen() {
                   <input
                     type="number"
                     {...register('age', { valueAsNumber: true })}
-                    className="flex h-10 w-full rounded-md border border-input px-3"
-                    placeholder="Years"
+                    className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    placeholder="years"
                   />
                   {errors.age && <p className="text-red-500 text-xs">{errors.age.message}</p>}
                 </div>
@@ -189,7 +191,7 @@ export function OnboardingScreen() {
                   <input
                     type="number"
                     {...register('height', { valueAsNumber: true })}
-                    className="flex h-10 w-full rounded-md border border-input px-3"
+                    className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                     placeholder="cm"
                   />
                   {errors.height && <p className="text-red-500 text-xs">{errors.height.message}</p>}
@@ -200,7 +202,7 @@ export function OnboardingScreen() {
                   <input
                     type="number"
                     {...register('weight', { valueAsNumber: true })}
-                    className="flex h-10 w-full rounded-md border border-input px-3"
+                    className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                     placeholder="kg"
                   />
                   {errors.weight && <p className="text-red-500 text-xs">{errors.weight.message}</p>}

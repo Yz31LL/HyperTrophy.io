@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../providers/AuthProvider'
 import { useProfile } from '../../hooks/useProfile'
 import { Button } from '@repo/ui/Button'
-import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/Card'
-import { Activity, Flame, Dumbbell } from 'lucide-react'
 import {
   calculateBMR,
   calculateTDEE,
@@ -27,6 +25,9 @@ import {
   WeightLog,
   MuscleGroup,
 } from '../../lib/analytics'
+import { EnergyFlux } from './EnergyFlux'
+import { DashboardStatCard } from './DashboardStatCard'
+import { ActionButtonSection } from './ActionButtonSection'
 
 export function DashboardScreen() {
   const [isMealModalOpen, setMealModalOpen] = useState(false)
@@ -62,7 +63,6 @@ export function DashboardScreen() {
   }, [])
 
   // --- 2. FETCH WORKOUTS (Heatmap & Calories) ---
-  /// --- 2. FETCH WORKOUTS (DEBUG MODE) ---
   useEffect(() => {
     const firebaseUser = auth.currentUser
     if (!firebaseUser) return
@@ -79,8 +79,6 @@ export function DashboardScreen() {
       )
 
       let totalBurnedToday = 0
-
-      // Set "Start of Today" to Midnight
       const now = new Date()
       now.setHours(0, 0, 0, 0)
 
@@ -88,26 +86,18 @@ export function DashboardScreen() {
         let workoutDate: Date | null = null
         const cals = Number(workout.caloriesBurned) || 0
 
-        // Debug Log per workout
-        console.log(`- Workout: ${workout.name}, Cals: ${cals}, DateRaw:`, workout.completedAt)
-
-        // Date Logic
         if (workout.completedAt && typeof workout.completedAt.toDate === 'function') {
           workoutDate = workout.completedAt.toDate()
         } else if (workout.date) {
           workoutDate = new Date(workout.date)
         }
 
-        // If date is valid and is today (or future)
         if (workoutDate && workoutDate >= now) {
           totalBurnedToday += cals
         }
       })
 
-      // FIX: Strictly show Today's calories
       setDailyCaloriesBurned(totalBurnedToday)
-
-      // Calculate Heatmap
       const vol = calculateWeeklyVolume(allWorkouts)
       setVolumeData(vol)
     })
@@ -156,7 +146,6 @@ export function DashboardScreen() {
   useEffect(() => {
     if (loading || !profile || hasCelebrated) return
 
-    // Trigger confetti if daily calorie goal is reached (>= 95% for flexibility)
     if (totalConsumed >= targetCalories * 0.95 && targetCalories > 0) {
       confetti({
         particleCount: 150,
@@ -168,11 +157,14 @@ export function DashboardScreen() {
     }
   }, [totalConsumed, targetCalories, loading, hasCelebrated, profile])
 
-  if (loading) return <div className="p-8 text-center">Loading your plan...</div>
+  if (loading)
+    return (
+      <div className="p-8 text-center bg-black text-white min-h-screen">Loading your plan...</div>
+    )
 
   if (!profile) {
     return (
-      <div className="p-8 text-center space-y-4">
+      <div className="p-8 text-center space-y-4 bg-black text-white min-h-screen">
         <h2 className="text-2xl font-bold">Profile Not Found</h2>
         <p>Please complete your setup to see your dashboard.</p>
         <Link to="/onboarding">
@@ -203,234 +195,159 @@ export function DashboardScreen() {
     }
   }
 
-  // bmr, tdee, targetCalories, macros are already calculated above
-
   return (
-    <div className="p-4 max-w-4xl mx-auto space-y-6">
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Hi, {user?.displayName}</h1>
-          <p className="text-muted-foreground">Today's Targets</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => auth.signOut()}>
-          Sign Out
-        </Button>
-      </div>
+    <div className="min-h-screen bg-[#050508] text-slate-200 antialiased selection:bg-[#00f3ff] selection:text-black font-['Rajdhani',_sans-serif]">
+      {/* Styles Injection */}
+      <style>{`
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-orange: #ff9100;
+            --neon-green: #00ff9d;
+            --neon-red: #ff0055;
+            --neon-yellow: #ffee00;
+            --bg-dark: #050508;
+            --card-bg: #0f1014;
+        }
+        .font-cyber {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(15, 16, 20, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.3);
+        }
+        .neon-text {
+            text-shadow: 0 0 8px currentColor;
+        }
+      `}</style>
 
-      {/* ALERT SYSTEM */}
-      <PlateauAlert isDetected={isPlateau} />
-      {/* NEW: ENERGY BALANCE CARD (THE MATH) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-3 bg-zinc-900 border-zinc-800">
-          <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-            {/* EAT */}
-            <div className="text-center">
-              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Eaten</p>
-              <p className="text-3xl font-bold text-blue-500">{Math.round(totalConsumed)}</p>
-            </div>
-
-            {/* MATH OPERATOR */}
-            <div className="text-zinc-600 font-bold text-xl">-</div>
-
-            {/* BURN (Base + Active) */}
-            <div className="text-center">
-              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
-                Burned (Total)
-              </p>
-              <div className="flex flex-col items-center">
-                <p className="text-3xl font-bold text-orange-500">
-                  {Math.round(tdee + dailyCaloriesBurned)}
-                </p>
-                <span className="text-[10px] text-zinc-500">
-                  ({Math.round(tdee)} Life + {dailyCaloriesBurned} Gym)
-                </span>
-              </div>
-            </div>
-
-            {/* MATH OPERATOR */}
-            <div className="text-zinc-600 font-bold text-xl">=</div>
-
-            {/* NET RESULT */}
-            <div className="text-center">
-              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
-                Net Balance
-              </p>
-              <p
-                className={`text-3xl font-bold ${totalConsumed > tdee + dailyCaloriesBurned ? 'text-red-500' : 'text-green-500'}`}
-              >
-                {Math.round(totalConsumed - (tdee + dailyCaloriesBurned))}
-              </p>
-              <p className="text-[10px] text-zinc-400">
-                {totalConsumed > tdee + dailyCaloriesBurned
-                  ? 'Surplus (Gaining)'
-                  : 'Deficit (Losing)'}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* MAIN STATS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* 1. HEATMAP (Left Column) */}
-        {volumeData && (
-          <div className="md:col-span-1">
-            <MuscleHeatmap volumeData={volumeData} />
+      <div className="max-w-6xl mx-auto p-6 md:p-8 space-y-10">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-6">
+          <div>
+            <h1 className="text-4xl font-cyber font-bold tracking-wider text-white">
+              HYPER<span className="text-[#00f3ff]">TROPHY</span>
+            </h1>
+            <p className="text-slate-400 font-medium text-lg mt-1 tracking-wide">
+              Welcome back,{' '}
+              <span className="text-white">{user?.displayName?.split(' ')[0] || 'Member'}</span>
+            </p>
           </div>
-        )}
+          <div className="flex items-center gap-4">
+            <span className="px-3 py-1 rounded-full bg-[#00ff9d]/10 border border-[#00ff9d]/20 text-[#00ff9d] text-xs font-bold uppercase tracking-wider animate-pulse">
+              System Online
+            </span>
+            <button
+              onClick={() => auth.signOut()}
+              className="px-6 py-2 rounded bg-transparent border border-white/20 hover:border-white/40 hover:bg-white/5 transition-all text-sm font-semibold tracking-wider text-white"
+            >
+              SIGN OUT
+            </button>
+          </div>
+        </header>
 
-        {/* 2. DETAILED STATS (Center/Right Columns) */}
-        <div className="md:col-span-2 grid grid-cols-2 gap-4">
-          {/* --- 1. CALORIES BURNED (Red Theme) --- */}
-          <Card className="relative overflow-hidden border-zinc-800/50 bg-zinc-900/20 group">
-            {/* Background Image */}
-            <img
-              src="/images/cardio.png"
-              alt="Cardio"
-              className="absolute inset-0 w-full h-full object-cover -z-20 opacity-40 transition-transform duration-500 group-hover:scale-110"
-            />
-            {/* Color Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-red-950/80 to-black/60 -z-10" />
+        {/* ALERT SYSTEM */}
+        <PlateauAlert isDetected={isPlateau} />
 
-            <CardHeader className="p-4 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium text-red-100 flex items-center gap-2">
-                <Flame className="h-4 w-4 text-red-500" /> Burned (Today)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 relative z-10">
-              <div className="text-2xl font-bold text-white">
-                {dailyCaloriesBurned}{' '}
-                <span className="text-sm text-red-200/70 font-normal">kcal</span>
+        <EnergyFlux
+          totalConsumed={totalConsumed}
+          tdee={tdee}
+          dailyCaloriesBurned={dailyCaloriesBurned}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-4 space-y-6">
+            <div className="glass-panel rounded-2xl p-6 min-h-[340px] flex flex-col relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-50 text-white">
+                <span className="material-symbols-outlined text-3xl">accessibility_new</span>
               </div>
-              <p className="text-xs text-red-200/50">from logged workouts</p>
-            </CardContent>
-          </Card>
-
-          {/* --- 2. PROTEIN (Blue Theme) --- */}
-          <Card className="relative overflow-hidden border-zinc-800/50 bg-zinc-900/20 group">
-            {/* Background Image */}
-            <img
-              src="/images/protein.jpg"
-              alt="Protein"
-              className="absolute inset-0 w-full h-full object-cover -z-20 opacity-40 transition-transform duration-500 group-hover:scale-110"
-            />
-            {/* Color Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-950/80 to-black/60 -z-10" />
-
-            <CardHeader className="p-4 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium text-blue-100 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]" />{' '}
-                Protein
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 relative z-10">
-              <div className="text-2xl font-bold text-white">{consumedMacros.protein}g</div>
-              <p className="text-xs text-blue-200/50">target: {macros.protein}g</p>
-            </CardContent>
-          </Card>
-
-          {/* --- 3. CARBS (Yellow Theme) --- */}
-          <Card className="relative overflow-hidden border-zinc-800/50 bg-zinc-900/20 group">
-            {/* Background Image */}
-            <img
-              src="/images/carbs.jpg"
-              alt="Carbs"
-              className="absolute inset-0 w-full h-full object-cover -z-20 opacity-40 transition-transform duration-500 group-hover:scale-110"
-            />
-            {/* Color Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-950/80 to-black/60 -z-10" />
-
-            <CardHeader className="p-4 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium text-yellow-100 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_#eab308]" />{' '}
-                Carbs
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 relative z-10">
-              <div className="text-2xl font-bold text-white">{consumedMacros.carbs}g</div>
-              <p className="text-xs text-yellow-200/50">target: {macros.carbs}g</p>
-            </CardContent>
-          </Card>
-
-          {/* --- 4. FATS (Green Theme) --- */}
-          <Card className="relative overflow-hidden border-zinc-800/50 bg-zinc-900/20 group">
-            {/* Background Image */}
-            <img
-              src="/images/fats.jpeg"
-              alt="Fats"
-              className="absolute inset-0 w-full h-full object-cover -z-20 opacity-40 transition-transform duration-500 group-hover:scale-110"
-            />
-            {/* Color Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-green-950/80 to-black/60 -z-10" />
-
-            <CardHeader className="p-4 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium text-green-100 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" /> Fats
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 relative z-10">
-              <div className="text-2xl font-bold text-white">{consumedMacros.fat}g</div>
-              <p className="text-xs text-green-200/50">target: {macros.fat}g</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 3. MACRO PROGRESS (Full Width or Side) */}
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Activity className="h-4 w-4 text-blue-500" /> Macro Progress
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center min-h-[240px]">
-            <NutritionDonutChart consumed={consumedMacros} targets={macros} />
-          </CardContent>
-        </Card>
-
-        {/* 4. WEIGHT CHART (Remaining width) */}
-        <div className="md:col-span-2">
-          <WeightChart history={weightHistory} />
-        </div>
-      </div>
-
-      {/* LOG BUTTONS */}
-      <div className="grid grid-cols-2 gap-4">
-        <Button
-          onClick={() => setMealModalOpen(true)}
-          className="bg-green-600 hover:bg-green-700 shadow-lg transition-transform active:scale-[0.98]"
-        >
-          Log Nutrition +
-        </Button>
-        <Button
-          onClick={() => setWeightModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 shadow-lg transition-transform active:scale-[0.98]"
-        >
-          Log Weight +
-        </Button>
-      </div>
-
-      {/* WORKOUT LINK */}
-      <Card className="bg-zinc-900 border-zinc-800 shadow-md">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-yellow-500/10 rounded-full">
-                <Dumbbell className="h-6 w-6 text-yellow-500" />
-              </div>
-              <div>
-                <p className="font-bold text-lg text-white">Workout Session</p>
-                <p className="text-sm text-zinc-400">Log your training for today</p>
+              <h3 className="text-lg font-cyber font-bold text-white mb-4">Volume Heatmap</h3>
+              <div className="flex-1 flex items-center justify-center relative">
+                {volumeData ? (
+                  <MuscleHeatmap volumeData={volumeData} />
+                ) : (
+                  <div className="text-center space-y-2 z-10">
+                    <p className="text-sm text-slate-400">Loading Heatmap...</p>
+                  </div>
+                )}
               </div>
             </div>
-            <Link to="/workout">
-              <Button className="bg-yellow-500 text-black hover:bg-yellow-400 font-bold">
-                Start Log
-              </Button>
-            </Link>
+
+            <div className="glass-panel rounded-2xl p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-cyber font-bold text-white flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#00f3ff]">pie_chart</span>
+                  Macro Distribution
+                </h3>
+              </div>
+              <div className="flex flex-col items-center justify-center py-4">
+                <NutritionDonutChart consumed={consumedMacros} targets={macros} />
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="lg:col-span-8 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <DashboardStatCard
+                title="Active Burn"
+                value={dailyCaloriesBurned}
+                unit="kcal"
+                label="Daily Activity Level"
+                imageSrc="/images/cardio.png"
+                themeColor="#ff0055"
+                iconName="local_fire_department"
+              />
+              <DashboardStatCard
+                title="Protein"
+                value={consumedMacros.protein}
+                unit="g"
+                label={`Target: ${macros.protein}g`}
+                target={macros.protein}
+                imageSrc="/images/protein.jpg"
+                themeColor="#00f3ff"
+              />
+              <DashboardStatCard
+                title="Carbs"
+                value={consumedMacros.carbs}
+                unit="g"
+                label={`Target: ${macros.carbs}g`}
+                target={macros.carbs}
+                imageSrc="/images/carbs.jpg"
+                themeColor="#ffee00"
+              />
+              <DashboardStatCard
+                title="Fats"
+                value={consumedMacros.fat}
+                unit="g"
+                label={`Target: ${macros.fat}g`}
+                target={macros.fat}
+                imageSrc="/images/fats.jpeg"
+                themeColor="#00ff9d"
+              />
+            </div>
+
+            <div className="glass-panel rounded-2xl p-6 relative">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-cyber font-bold text-white">Weight Trajectory</h3>
+                <div className="text-xs text-slate-400 bg-white/5 px-2 py-1 rounded">Past Logs</div>
+              </div>
+              <WeightChart history={weightHistory} />
+            </div>
+          </div>
+        </div>
+
+        <ActionButtonSection
+          onLogMeal={() => setMealModalOpen(true)}
+          onLogWeight={() => setWeightModalOpen(true)}
+        />
+
+        <div className="text-center pb-8 opacity-40">
+          <p className="text-[10px] font-mono tracking-[0.3em] uppercase">
+            HyperTrophy Pro // v2.4.0 // System Operational
+          </p>
+        </div>
+      </div>
 
       <MealEntryModal
         isOpen={isMealModalOpen}
@@ -438,7 +355,6 @@ export function DashboardScreen() {
         onSave={handleSaveMeal}
       />
 
-      {/* NEW WEIGHT MODAL */}
       <WeightEntryModal isOpen={isWeightModalOpen} onClose={() => setWeightModalOpen(false)} />
     </div>
   )

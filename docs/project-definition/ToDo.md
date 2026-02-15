@@ -83,7 +83,7 @@ _Goal: Allow users to log the work they do._
   - [x] **Motion:** Progress bar fills smoothly as sets are logged (Framer Motion).
   - [x] Categorize exercises by muscle group.
   - [x] Add exercises to workout session.
-  - [ ] Name the exercises
+  - [x] Name the exercises
   - [x] Display calories burned
   - [x] Connect to Firebase Db
 
@@ -104,7 +104,7 @@ _Goal: Visual feedback and Plateau detection._
   - [x] **A11y:** Ensure Heatmap has a tabular data fallback for screen readers (Rubric: Design L5).
 - [x] **Plateau Detector**
   - [x] Logic: `avg_weight_last_7` vs `avg_weight_prev_7`.
-  - [] UI: "Plateau Detected" warning card with entrance animation.
+  - [x] UI: "Plateau Detected" warning card with entrance animation.
 
 ---
 
@@ -112,12 +112,12 @@ _Goal: Visual feedback and Plateau detection._
 
 _Goal: Upgrade current UI to "Premium" standard._
 
-- [ ] **Design System Refinement**
+- [x] **Design System Refinement**
   - [x] Define standard Token hierarchy (Colors, Spacing, Typography).
-  - [ ] Ensure all text meets **WCAG AA Contrast** ratios.
-- [ ] **Motion Implementation**
-  - [ ] Add **Page Transitions** (Fade/Slide) between Onboarding steps.
-  - [ ] Add **Achievement Polish:** "Confetti" effects on daily goal completion.
+  - [x] Ensure all text meets **WCAG AA Contrast** ratios.
+- [x] **Motion Implementation**
+  - [x] Add **Page Transitions** (Fade/Slide) between Onboarding steps.
+  - [x] Add **Achievement Polish:** "Confetti" effects on daily goal completion.
 
 ---
 

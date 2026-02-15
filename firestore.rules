@@ -9,16 +9,24 @@ service cloud.firestore {
 
     // USERS Collection
     match /users/{userId} {
-      // Simplification for Phase 2: Only owner can read/write
       allow read, write: if isOwner(userId);
+
+      // Explicitly allow sub-collections for the owner
+      match /workouts/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /meals/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /weight_logs/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /private_profile/{document=**} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
-    // PRIVATE PROFILE Sub-Collection
-    match /users/{userId}/private_profile/{document=**} {
-      allow read, write: if isOwner(userId);
-    }
-
-    // DAILY LOGS Collection
+    // DAILY LOGS (Legacy or Shared)
     match /daily_logs/{logId} {
       allow read: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { UserProfileSchema, type UserProfile } from '@repo/shared/schemas'
 import { Button } from '@repo/ui/Button'
@@ -156,13 +157,13 @@ export function OnboardingScreen() {
             {STEPS.map((s, i) => (
               <div
                 key={i}
-                className={`flex items-center ${i <= step ? 'text-yellow-500' : 'text-zinc-600'}`}
+                className={`flex items-center ${i <= step ? 'text-yellow-500' : 'text-zinc-500'}`}
               >
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
                     i <= step
                       ? 'border-yellow-500 bg-yellow-500/10 text-yellow-500 font-bold'
-                      : 'border-zinc-700 text-zinc-700'
+                      : 'border-zinc-500 text-zinc-500'
                   } mr-2`}
                 >
                   {i + 1}
@@ -175,176 +176,198 @@ export function OnboardingScreen() {
           <CardDescription className="text-zinc-400">{STEPS[step].desc}</CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="overflow-hidden">
           <form id="onboarding-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* --- STEP 0: BIOMETRICS --- */}
-            {step === 0 && (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Gender</label>
-                  <select {...register('gender')} className={inputClass}>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                  </select>
-                </div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                {/* --- STEP 0: BIOMETRICS --- */}
+                {step === 0 && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-zinc-300">Gender</label>
+                      <select {...register('gender')} className={inputClass}>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                      </select>
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Age</label>
-                  <input
-                    type="number"
-                    {...register('age', { valueAsNumber: true })}
-                    className={inputClass}
-                    placeholder="years"
-                  />
-                  {errors.age && <p className="text-red-500 text-xs">{errors.age.message}</p>}
-                </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-zinc-300">Age</label>
+                      <input
+                        type="number"
+                        {...register('age', { valueAsNumber: true })}
+                        className={inputClass}
+                        placeholder="years"
+                      />
+                      {errors.age && <p className="text-red-500 text-xs">{errors.age.message}</p>}
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Height (cm)</label>
-                  <input
-                    type="number"
-                    {...register('height', { valueAsNumber: true })}
-                    className={inputClass}
-                    placeholder="cm"
-                  />
-                  {errors.height && <p className="text-red-500 text-xs">{errors.height.message}</p>}
-                </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-zinc-300">Height (cm)</label>
+                      <input
+                        type="number"
+                        {...register('height', { valueAsNumber: true })}
+                        className={inputClass}
+                        placeholder="cm"
+                      />
+                      {errors.height && (
+                        <p className="text-red-500 text-xs">{errors.height.message}</p>
+                      )}
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Weight (kg)</label>
-                  <input
-                    type="number"
-                    {...register('weight', { valueAsNumber: true })}
-                    className={inputClass}
-                    placeholder="kg"
-                  />
-                  {errors.weight && <p className="text-red-500 text-xs">{errors.weight.message}</p>}
-                </div>
-              </div>
-            )}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-zinc-300">Weight (kg)</label>
+                      <input
+                        type="number"
+                        {...register('weight', { valueAsNumber: true })}
+                        className={inputClass}
+                        placeholder="kg"
+                      />
+                      {errors.weight && (
+                        <p className="text-red-500 text-xs">{errors.weight.message}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-            {/* --- STEP 1: LIFESTYLE --- */}
-            {step === 1 && (
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Activity Level</label>
-                  <select {...register('activityLevel')} className={inputClass}>
-                    <option value="sedentary">Sedentary (Office job, little exercise)</option>
-                    <option value="light">Light (Exercise 1-3 days/week)</option>
-                    <option value="moderate">Moderate (Exercise 3-5 days/week)</option>
-                    <option value="heavy">Heavy (Exercise 6-7 days/week)</option>
-                    <option value="athlete">Athlete (Physical job + hard training)</option>
-                  </select>
-                </div>
+                {/* --- STEP 1: LIFESTYLE --- */}
+                {step === 1 && (
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-zinc-300">Activity Level</label>
+                      <select {...register('activityLevel')} className={inputClass}>
+                        <option value="sedentary">Sedentary (Office job, little exercise)</option>
+                        <option value="light">Light (Exercise 1-3 days/week)</option>
+                        <option value="moderate">Moderate (Exercise 3-5 days/week)</option>
+                        <option value="heavy">Heavy (Exercise 6-7 days/week)</option>
+                        <option value="athlete">Athlete (Physical job + hard training)</option>
+                      </select>
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Archetype Strategy</label>
-                  <p className="text-xs text-zinc-500">
-                    This adjusts your macro split (e.g. Bodybuilders get more protein).
-                  </p>
-                  <select {...register('archetype')} className={inputClass}>
-                    <option value="general">General Fitness (Balanced)</option>
-                    <option value="bodybuilder">Bodybuilder (High Protein)</option>
-                    <option value="fighter">Fighter (High Carb / Explosive)</option>
-                    <option value="crossfitter">CrossFitter (High Work Capacity)</option>
-                    <option value="senior">Senior (Longevity & Maintenance)</option>
-                  </select>
-                </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-zinc-300">
+                        Archetype Strategy
+                      </label>
+                      <p className="text-xs text-zinc-500">
+                        This adjusts your macro split (e.g. Bodybuilders get more protein).
+                      </p>
+                      <select {...register('archetype')} className={inputClass}>
+                        <option value="general">General Fitness (Balanced)</option>
+                        <option value="bodybuilder">Bodybuilder (High Protein)</option>
+                        <option value="fighter">Fighter (High Carb / Explosive)</option>
+                        <option value="crossfitter">CrossFitter (High Work Capacity)</option>
+                        <option value="senior">Senior (Longevity & Maintenance)</option>
+                      </select>
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Primary Goal</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {['lose_weight', 'maintain', 'gain_muscle'].map(g => (
-                      <div
-                        key={g}
-                        className={`cursor-pointer rounded-lg border p-4 text-center transition-all ${
-                          formData.goal === g
-                            ? 'border-yellow-500 bg-yellow-500/10 text-white shadow-[0_0_10px_rgba(234,179,8,0.2)]'
-                            : 'border-zinc-800 hover:border-zinc-600 text-zinc-400'
-                        }`}
-                        onClick={() => {
-                          setValue('goal', g as UserProfile['goal'], { shouldValidate: true })
-                        }}
-                      >
-                        <input type="radio" value={g} {...register('goal')} className="sr-only" />
-                        <span className="capitalize font-medium text-sm">
-                          {g.replace('_', ' ')}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-zinc-300">Primary Goal</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {['lose_weight', 'maintain', 'gain_muscle'].map(g => (
+                          <div
+                            key={g}
+                            className={`cursor-pointer rounded-lg border p-4 text-center transition-all ${
+                              formData.goal === g
+                                ? 'border-yellow-500 bg-yellow-500/10 text-white shadow-[0_0_10px_rgba(234,179,8,0.2)]'
+                                : 'border-zinc-800 hover:border-zinc-600 text-zinc-400'
+                            }`}
+                            onClick={() => {
+                              setValue('goal', g as UserProfile['goal'], { shouldValidate: true })
+                            }}
+                          >
+                            <input
+                              type="radio"
+                              value={g}
+                              {...register('goal')}
+                              className="sr-only"
+                            />
+                            <span className="capitalize font-medium text-sm">
+                              {g.replace('_', ' ')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* --- STEP 2: RESULTS --- */}
+                {step === 2 && results && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      {/* BMR Card */}
+                      <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-lg text-center shadow-sm">
+                        <div className="text-sm text-zinc-500 font-medium">BMR</div>
+                        <div className="text-2xl font-bold text-white mt-1">{results.bmr}</div>
+                        <div className="text-[10px] text-zinc-600 uppercase tracking-wider">
+                          kcal/day
+                        </div>
+                      </div>
+
+                      {/* TDEE Card */}
+                      <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-lg text-center shadow-sm">
+                        <div className="text-sm text-zinc-500 font-medium">TDEE</div>
+                        <div className="text-2xl font-bold text-white mt-1">{results.tdee}</div>
+                        <div className="text-[10px] text-zinc-600 uppercase tracking-wider">
+                          Maintenance
+                        </div>
+                      </div>
+
+                      {/* Target Card */}
+                      <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-lg text-center shadow-sm">
+                        <div className="text-sm text-yellow-500 font-medium">Target</div>
+                        <div className="text-2xl font-bold text-yellow-400 mt-1">
+                          {results.macros.calories}
+                        </div>
+                        <div className="text-[10px] text-yellow-500/70 uppercase tracking-wider">
+                          kcal/day
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm text-zinc-300">Daily Macro Split</h4>
+                      {/* Progress Bar Track */}
+                      <div className="h-4 w-full bg-zinc-900 border border-zinc-800 rounded-full overflow-hidden flex">
+                        <div className="h-full bg-blue-600" style={{ width: '40%' }} />
+                        <div className="h-full bg-green-600" style={{ width: '30%' }} />
+                        <div className="h-full bg-yellow-600" style={{ width: '30%' }} />
+                      </div>
+
+                      {/* Legend */}
+                      <div className="flex justify-between text-xs text-zinc-400">
+                        <span className="flex items-center">
+                          <div className="w-2 h-2 rounded-full bg-blue-600 mr-2 shadow-[0_0_8px_rgba(37,99,235,0.5)]" />
+                          Protein:{' '}
+                          <span className="text-white ml-1">{results.macros.protein}g</span>
+                        </span>
+                        <span className="flex items-center">
+                          <div className="w-2 h-2 rounded-full bg-green-600 mr-2 shadow-[0_0_8px_rgba(22,163,74,0.5)]" />
+                          Fats: <span className="text-white ml-1">{results.macros.fat}g</span>
+                        </span>
+                        <span className="flex items-center">
+                          <div className="w-2 h-2 rounded-full bg-yellow-600 mr-2 shadow-[0_0_8px_rgba(202,138,4,0.5)]" />
+                          Carbs: <span className="text-white ml-1">{results.macros.carbs}g</span>
                         </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+                    </div>
 
-            {/* --- STEP 2: RESULTS --- */}
-            {step === 2 && results && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="grid gap-4 sm:grid-cols-3">
-                  {/* BMR Card */}
-                  <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-lg text-center shadow-sm">
-                    <div className="text-sm text-zinc-500 font-medium">BMR</div>
-                    <div className="text-2xl font-bold text-white mt-1">{results.bmr}</div>
-                    <div className="text-[10px] text-zinc-600 uppercase tracking-wider">
-                      kcal/day
+                    {/* Science Note */}
+                    <div className="bg-yellow-500/5 p-4 rounded-md border border-yellow-500/20 text-sm text-yellow-200/80">
+                      <strong className="text-yellow-400">Verified Science Note:</strong> These
+                      numbers are based on the Mifflin-St Jeor equation. We will adjust them based
+                      on your actual progress over the next 2 weeks.
                     </div>
                   </div>
-
-                  {/* TDEE Card */}
-                  <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-lg text-center shadow-sm">
-                    <div className="text-sm text-zinc-500 font-medium">TDEE</div>
-                    <div className="text-2xl font-bold text-white mt-1">{results.tdee}</div>
-                    <div className="text-[10px] text-zinc-600 uppercase tracking-wider">
-                      Maintenance
-                    </div>
-                  </div>
-
-                  {/* Target Card */}
-                  <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-lg text-center shadow-sm">
-                    <div className="text-sm text-yellow-500 font-medium">Target</div>
-                    <div className="text-2xl font-bold text-yellow-400 mt-1">
-                      {results.macros.calories}
-                    </div>
-                    <div className="text-[10px] text-yellow-500/70 uppercase tracking-wider">
-                      kcal/day
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="font-medium text-sm text-zinc-300">Daily Macro Split</h4>
-                  {/* Progress Bar Track */}
-                  <div className="h-4 w-full bg-zinc-900 border border-zinc-800 rounded-full overflow-hidden flex">
-                    <div className="h-full bg-blue-600" style={{ width: '40%' }} />
-                    <div className="h-full bg-green-600" style={{ width: '30%' }} />
-                    <div className="h-full bg-yellow-600" style={{ width: '30%' }} />
-                  </div>
-
-                  {/* Legend */}
-                  <div className="flex justify-between text-xs text-zinc-400">
-                    <span className="flex items-center">
-                      <div className="w-2 h-2 rounded-full bg-blue-600 mr-2 shadow-[0_0_8px_rgba(37,99,235,0.5)]" />
-                      Protein: <span className="text-white ml-1">{results.macros.protein}g</span>
-                    </span>
-                    <span className="flex items-center">
-                      <div className="w-2 h-2 rounded-full bg-green-600 mr-2 shadow-[0_0_8px_rgba(22,163,74,0.5)]" />
-                      Fats: <span className="text-white ml-1">{results.macros.fat}g</span>
-                    </span>
-                    <span className="flex items-center">
-                      <div className="w-2 h-2 rounded-full bg-yellow-600 mr-2 shadow-[0_0_8px_rgba(202,138,4,0.5)]" />
-                      Carbs: <span className="text-white ml-1">{results.macros.carbs}g</span>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Science Note */}
-                <div className="bg-yellow-500/5 p-4 rounded-md border border-yellow-500/20 text-sm text-yellow-200/80">
-                  <strong className="text-yellow-400">Verified Science Note:</strong> These numbers
-                  are based on the Mifflin-St Jeor equation. We will adjust them based on your
-                  actual progress over the next 2 weeks.
-                </div>
-              </div>
-            )}
+                )}
+              </motion.div>
+            </AnimatePresence>
           </form>
         </CardContent>
 

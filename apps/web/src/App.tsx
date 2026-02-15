@@ -5,6 +5,7 @@ import { SignUpScreen } from './pages/auth/SignUpScreen'
 import { DashboardScreen } from './pages/dashboard/DashboardScreen'
 import { useAuth } from './providers/AuthProvider'
 import { WorkoutSession } from './pages/workout/WorkoutSession'
+import { HistoryScreen } from './pages/dashboard/HistoryScreen'
 
 // A wrapper to protect routes that require login
 function ProtectedRoute({ children }: { children: JSX.Element }) {
@@ -50,6 +51,14 @@ export function App() {
           element={
             <ProtectedRoute>
               <DashboardScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <HistoryScreen />
             </ProtectedRoute>
           }
         />

@@ -12,6 +12,7 @@ import {
   calculateMacros,
 } from '../../lib/health-calc'
 import { WeightChart } from './WeightChart'
+import confetti from 'canvas-confetti'
 import { collection, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore'
 import { db, auth } from '../../lib/firebase'
 import { NutritionDonutChart } from './NutritionDonutChart'
@@ -33,6 +34,7 @@ export function DashboardScreen() {
   const [volumeData, setVolumeData] = useState<Record<MuscleGroup, number> | null>(null)
   const [isPlateau, setIsPlateau] = useState(false)
   const [weightHistory, setWeightHistory] = useState<WeightLog[]>([])
+  const [hasCelebrated, setHasCelebrated] = useState(false)
 
   // --- 1. FETCH MEALS ---
   useEffect(() => {
@@ -137,6 +139,33 @@ export function DashboardScreen() {
   const { user } = useAuth()
   const { profile, loading } = useProfile()
 
+  // Targets calculation for logic usage
+  const bmr = profile ? calculateBMR(profile) : 0
+  const tdee = profile ? calculateTDEE(bmr, profile.activityLevel) : 0
+  const targetCalories = profile ? calculateTargetCalories(tdee, profile.goal) : 0
+  const macros = profile
+    ? calculateMacros(profile, targetCalories)
+    : { protein: 0, carbs: 0, fat: 0 }
+
+  // CELEBRATION EFFECT
+  useEffect(() => {
+    if (loading || !profile || hasCelebrated) return
+
+    const totalConsumed =
+      consumedMacros.protein * 4 + consumedMacros.carbs * 4 + consumedMacros.fat * 9
+
+    // Trigger confetti if daily calorie goal is reached (>= 95% for flexibility)
+    if (totalConsumed >= targetCalories * 0.95 && targetCalories > 0) {
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#EAB308', '#2563EB', '#22C55E'],
+      })
+      setHasCelebrated(true)
+    }
+  }, [consumedMacros, targetCalories, loading, hasCelebrated, profile])
+
   if (loading) return <div className="p-8 text-center">Loading your plan...</div>
 
   if (!profile) {
@@ -172,10 +201,7 @@ export function DashboardScreen() {
     }
   }
 
-  const bmr = calculateBMR(profile)
-  const tdee = calculateTDEE(bmr, profile.activityLevel)
-  const targetCalories = calculateTargetCalories(tdee, profile.goal)
-  const macros = calculateMacros(profile, targetCalories)
+  // bmr, tdee, targetCalories, macros are already calculated above
 
   return (
     <div className="p-4 max-w-4xl mx-auto space-y-6">
@@ -267,7 +293,7 @@ export function DashboardScreen() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center min-h-[240px]">
-            <NutritionDonutChart consumed={consumedMacros} />
+            <NutritionDonutChart consumed={consumedMacros} targets={macros} />
           </CardContent>
         </Card>
 
@@ -286,18 +312,22 @@ export function DashboardScreen() {
       </Button>
 
       {/* WORKOUT LINK */}
-      <Card className="border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/20">
+      <Card className="bg-zinc-900 border-zinc-800 shadow-md">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Dumbbell className="h-5 w-5 text-blue-500" />
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-yellow-500/10 rounded-full">
+                <Dumbbell className="h-6 w-6 text-yellow-500" />
+              </div>
               <div>
-                <p className="font-semibold text-sm">Workout Session</p>
-                <p className="text-xs text-muted-foreground">Log your training for today</p>
+                <p className="font-bold text-lg text-white">Workout Session</p>
+                <p className="text-sm text-zinc-400">Log your training for today</p>
               </div>
             </div>
             <Link to="/workout">
-              <Button size="sm">Start Log</Button>
+              <Button className="bg-yellow-500 text-black hover:bg-yellow-400 font-bold">
+                Start Log
+              </Button>
             </Link>
           </div>
         </CardContent>

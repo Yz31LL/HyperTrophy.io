@@ -143,12 +143,12 @@ _Goal: The Dual-Sided Marketplace features._
 
   - [x] **E2E:** Implement Playwright tests with ≥80% coverage.
   - [x] **Security:** Document **Threat Model** in `docs/security/THREAT_MODEL.md`.
-  - [ ] **Security:** Maintain an exemplary **ADR trail** in `/docs/adr`.
+  - [x] **Security:** Maintain an exemplary **ADR trail** in `/docs/adr`.
 
-- [ ] **Infrastructure & Ops**
-  - [ ] **DevOps:** Setup **Canary Deploys** with automated rollbacks.
-  - [ ] **Analytics:** Implement **PostHog/Mixpanel** for data-driven decisions.
-  - [ ] **PM:** Setup automated public changelog from Changesets.
+- [x] **Infrastructure & Ops**
+  - [x] **DevOps:** Setup **Canary Deploys** with automated rollbacks.
+  - [x] **Analytics:** Implement **PostHog/Mixpanel** for data-driven decisions.
+  - [x] **PM:** Setup automated public changelog from Changesets.
 
 ---
 

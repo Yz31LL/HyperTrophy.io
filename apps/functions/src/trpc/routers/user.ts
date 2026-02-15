@@ -10,6 +10,7 @@ export const userRouter = router({
       id: 'dummy-id',
       email: input.email,
       name: input.name,
+      role: input.role,
     })),
 
   getById: publicProcedure

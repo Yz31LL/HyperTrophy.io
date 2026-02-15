@@ -11,6 +11,7 @@ describe('userRouter', () => {
       const result = await caller.user.create({
         email: 'test@example.com',
         name: 'Test User',
+        role: 'trainee',
       })
       expect(result.id).toBeDefined()
       expect(result.email).toBe('test@example.com')
@@ -20,6 +21,7 @@ describe('userRouter', () => {
     it('returns a dummy id', async () => {
       const result = await caller.user.create({
         email: 'another@example.com',
+        role: 'trainer',
       })
       expect(result.id).toBe('dummy-id')
     })

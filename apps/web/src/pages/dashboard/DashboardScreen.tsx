@@ -282,57 +282,96 @@ export function DashboardScreen() {
 
         {/* 2. DETAILED STATS (Center/Right Columns) */}
         <div className="md:col-span-2 grid grid-cols-2 gap-4">
-          {/* Calories Burned */}
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+          {/* --- 1. CALORIES BURNED (Red Theme) --- */}
+          <Card className="relative overflow-hidden border-zinc-800/50 bg-zinc-900/20 group">
+            {/* Background Image */}
+            <img
+              src="/images/cardio.png"
+              alt="Cardio"
+              className="absolute inset-0 w-full h-full object-cover -z-20 opacity-40 transition-transform duration-500 group-hover:scale-110"
+            />
+            {/* Color Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-red-950/80 to-black/60 -z-10" />
+
+            <CardHeader className="p-4 pb-2 relative z-10">
+              <CardTitle className="text-sm font-medium text-red-100 flex items-center gap-2">
                 <Flame className="h-4 w-4 text-red-500" /> Burned (Today)
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="text-2xl font-bold text-red-500">
-                {dailyCaloriesBurned} <span className="text-sm text-muted-foreground">kcal</span>
+            <CardContent className="p-4 pt-0 relative z-10">
+              <div className="text-2xl font-bold text-white">
+                {dailyCaloriesBurned}{' '}
+                <span className="text-sm text-red-200/70 font-normal">kcal</span>
               </div>
-              <p className="text-xs text-muted-foreground">from logged workouts</p>
+              <p className="text-xs text-red-200/50">from logged workouts</p>
             </CardContent>
           </Card>
 
-          {/* Protein */}
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500" /> Protein
+          {/* --- 2. PROTEIN (Blue Theme) --- */}
+          <Card className="relative overflow-hidden border-zinc-800/50 bg-zinc-900/20 group">
+            {/* Background Image */}
+            <img
+              src="/images/protein.jpg"
+              alt="Protein"
+              className="absolute inset-0 w-full h-full object-cover -z-20 opacity-40 transition-transform duration-500 group-hover:scale-110"
+            />
+            {/* Color Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-950/80 to-black/60 -z-10" />
+
+            <CardHeader className="p-4 pb-2 relative z-10">
+              <CardTitle className="text-sm font-medium text-blue-100 flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]" />{' '}
+                Protein
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="text-2xl font-bold text-blue-600">{consumedMacros.protein}g</div>
-              <p className="text-xs text-muted-foreground">target: {macros.protein}g</p>
+            <CardContent className="p-4 pt-0 relative z-10">
+              <div className="text-2xl font-bold text-white">{consumedMacros.protein}g</div>
+              <p className="text-xs text-blue-200/50">target: {macros.protein}g</p>
             </CardContent>
           </Card>
 
-          {/* Carbs */}
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-yellow-500" /> Carbs
+          {/* --- 3. CARBS (Yellow Theme) --- */}
+          <Card className="relative overflow-hidden border-zinc-800/50 bg-zinc-900/20 group">
+            {/* Background Image */}
+            <img
+              src="/images/carbs.jpg"
+              alt="Carbs"
+              className="absolute inset-0 w-full h-full object-cover -z-20 opacity-40 transition-transform duration-500 group-hover:scale-110"
+            />
+            {/* Color Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-950/80 to-black/60 -z-10" />
+
+            <CardHeader className="p-4 pb-2 relative z-10">
+              <CardTitle className="text-sm font-medium text-yellow-100 flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_#eab308]" />{' '}
+                Carbs
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="text-2xl font-bold text-yellow-600">{consumedMacros.carbs}g</div>
-              <p className="text-xs text-muted-foreground">target: {macros.carbs}g</p>
+            <CardContent className="p-4 pt-0 relative z-10">
+              <div className="text-2xl font-bold text-white">{consumedMacros.carbs}g</div>
+              <p className="text-xs text-yellow-200/50">target: {macros.carbs}g</p>
             </CardContent>
           </Card>
 
-          {/* Fats */}
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500" /> Fats
+          {/* --- 4. FATS (Green Theme) --- */}
+          <Card className="relative overflow-hidden border-zinc-800/50 bg-zinc-900/20 group">
+            {/* Background Image */}
+            <img
+              src="/images/fats.jpeg"
+              alt="Fats"
+              className="absolute inset-0 w-full h-full object-cover -z-20 opacity-40 transition-transform duration-500 group-hover:scale-110"
+            />
+            {/* Color Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-green-950/80 to-black/60 -z-10" />
+
+            <CardHeader className="p-4 pb-2 relative z-10">
+              <CardTitle className="text-sm font-medium text-green-100 flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" /> Fats
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="text-2xl font-bold text-green-600">{consumedMacros.fat}g</div>
-              <p className="text-xs text-muted-foreground">target: {macros.fat}g</p>
+            <CardContent className="p-4 pt-0 relative z-10">
+              <div className="text-2xl font-bold text-white">{consumedMacros.fat}g</div>
+              <p className="text-xs text-green-200/50">target: {macros.fat}g</p>
             </CardContent>
           </Card>
         </div>

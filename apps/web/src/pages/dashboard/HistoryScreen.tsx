@@ -1,11 +1,21 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, query, orderBy, getDocs, Timestamp } from 'firebase/firestore'
+import {
+  collection,
+  query,
+  orderBy,
+  getDocs,
+  Timestamp,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from 'firebase/firestore'
 import { db, auth } from '../../lib/firebase'
 import { Button } from '@repo/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/Card'
-import { ArrowLeft, Dumbbell, Utensils, Calendar, Clock, Flame } from 'lucide-react'
+import { ArrowLeft, Dumbbell, Utensils, Calendar, Clock, Flame, Pencil, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
+import { MealEntryModal, MealFormValues } from './MealEntryModal'
 
 // --- TYPES ---
 interface WorkoutLog {
@@ -36,63 +46,121 @@ export function HistoryScreen() {
   const [meals, setMeals] = useState<MealLog[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const user = auth.currentUser
-      if (!user) return
+  // --- EDITING STATE ---
+  const [isMealModalOpen, setMealModalOpen] = useState(false)
+  const [editingMeal, setEditingMeal] = useState<MealLog | null>(null)
 
-      try {
-        // 1. Fetch Workouts
-        const workoutsRef = collection(db, 'users', user.uid, 'workouts')
-        const workoutsQuery = query(workoutsRef, orderBy('completedAt', 'desc'))
-        const workoutSnapshot = await getDocs(workoutsQuery)
+  // FETCH DATA
+  const fetchData = async () => {
+    const user = auth.currentUser
+    if (!user) return
 
-        const workoutData: WorkoutLog[] = workoutSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as WorkoutLog[]
+    try {
+      // 1. Fetch Workouts
+      const workoutsRef = collection(db, 'users', user.uid, 'workouts')
+      const workoutsQuery = query(workoutsRef, orderBy('completedAt', 'desc'))
+      const workoutSnapshot = await getDocs(workoutsQuery)
+      const workoutData = workoutSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as WorkoutLog[]
+      setWorkouts(workoutData)
 
-        setWorkouts(workoutData)
-
-        // 2. Fetch Meals
-        const mealsRef = collection(db, 'users', user.uid, 'meals')
-        const mealsQuery = query(mealsRef, orderBy('createdAt', 'desc'))
-        const mealSnapshot = await getDocs(mealsQuery)
-
-        const mealData: MealLog[] = mealSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as MealLog[]
-
-        setMeals(mealData)
-      } catch (error) {
-        console.error('Error fetching history:', error)
-      } finally {
-        setLoading(false)
-      }
+      // 2. Fetch Meals
+      const mealsRef = collection(db, 'users', user.uid, 'meals')
+      const mealsQuery = query(mealsRef, orderBy('createdAt', 'desc'))
+      const mealSnapshot = await getDocs(mealsQuery)
+      const mealData = mealSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MealLog[]
+      setMeals(mealData)
+    } catch (error) {
+      console.error('Error fetching history:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchData()
   }, [])
+
+  // --- ACTIONS ---
+
+  // 1. DELETE ITEM
+  const handleDelete = async (collectionName: 'workouts' | 'meals', id: string) => {
+    if (!confirm('Are you sure you want to delete this entry?')) return
+
+    const user = auth.currentUser
+    if (!user) return
+
+    try {
+      await deleteDoc(doc(db, 'users', user.uid, collectionName, id))
+      // Refresh local state without reloading
+      if (collectionName === 'workouts') {
+        setWorkouts(prev => prev.filter(w => w.id !== id))
+      } else {
+        setMeals(prev => prev.filter(m => m.id !== id))
+      }
+    } catch (error) {
+      console.error('Error deleting:', error)
+      alert('Failed to delete item')
+    }
+  }
+
+  // 2. OPEN EDIT MEAL
+  const handleEditMealClick = (meal: MealLog) => {
+    setEditingMeal(meal)
+    setMealModalOpen(true)
+  }
+
+  // 3. SAVE EDITED MEAL
+  const handleUpdateMeal = async (data: MealFormValues) => {
+    const user = auth.currentUser
+    if (!user || !editingMeal) return
+
+    try {
+      const mealRef = doc(db, 'users', user.uid, 'meals', editingMeal.id)
+
+      await updateDoc(mealRef, {
+        name: data.name,
+        protein: data.protein,
+        carbs: data.carbs,
+        fat: data.fat,
+        calories: data.protein * 4 + data.carbs * 4 + data.fat * 9,
+      })
+
+      // Refresh data
+      fetchData()
+      setEditingMeal(null)
+    } catch (error) {
+      console.error('Error updating meal:', error)
+    }
+  }
 
   // Helper to format timestamps safely
   const formatDate = (timestamp: Timestamp | null) => {
     if (!timestamp) return 'Unknown Date'
-    return format(timestamp.toDate(), 'MMM d, yyyy • h:mm a')
+    const date =
+      timestamp instanceof Timestamp ? timestamp.toDate() : new Date(timestamp as unknown as string)
+    return format(date, 'MMM d, yyyy • h:mm a')
   }
 
   return (
     <div className="min-h-screen bg-black text-white p-4 max-w-2xl mx-auto space-y-6">
       {/* HEADER */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/dashboard')}
+          className="text-zinc-400 hover:text-white"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-2xl font-bold">Activity History</h1>
       </div>
 
       {/* TABS */}
-      <div className="grid grid-cols-2 gap-2 bg-zinc-900 p-1 rounded-lg">
+      <div className="grid grid-cols-2 gap-2 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
         <button
           onClick={() => setActiveTab('workouts')}
           className={`flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -125,7 +193,7 @@ export function HistoryScreen() {
             <div className="text-center py-10 text-zinc-500">No workouts logged yet.</div>
           ) : (
             workouts.map(workout => (
-              <Card key={workout.id} className="bg-zinc-900 border-zinc-800">
+              <Card key={workout.id} className="bg-zinc-900 border-zinc-800 relative group">
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <div>
@@ -135,9 +203,19 @@ export function HistoryScreen() {
                         {formatDate(workout.completedAt)}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 text-red-500 font-bold text-sm">
-                      <Flame className="h-4 w-4" />
-                      {workout.caloriesBurned}
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1 text-red-500 font-bold text-sm">
+                        <Flame className="h-4 w-4" />
+                        {workout.caloriesBurned}
+                      </div>
+
+                      {/* DELETE BUTTON (Workouts) */}
+                      <button
+                        onClick={() => handleDelete('workouts', workout.id)}
+                        className="text-zinc-600 hover:text-red-500 transition-colors p-1"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </CardHeader>
@@ -157,7 +235,7 @@ export function HistoryScreen() {
           <div className="text-center py-10 text-zinc-500">No meals logged yet.</div>
         ) : (
           meals.map(meal => (
-            <Card key={meal.id} className="bg-zinc-900 border-zinc-800">
+            <Card key={meal.id} className="bg-zinc-900 border-zinc-800 relative group">
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <div>
@@ -167,8 +245,24 @@ export function HistoryScreen() {
                       {formatDate(meal.createdAt)}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-bold text-white">{meal.calories} kcal</div>
+
+                  {/* EDIT / DELETE CONTROLS */}
+                  <div className="flex items-center gap-2">
+                    <div className="font-bold text-white mr-2">{meal.calories} kcal</div>
+
+                    <button
+                      onClick={() => handleEditMealClick(meal)}
+                      className="text-zinc-500 hover:text-blue-400 transition-colors p-1"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete('meals', meal.id)}
+                      className="text-zinc-500 hover:text-red-500 transition-colors p-1"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               </CardHeader>
@@ -192,6 +286,17 @@ export function HistoryScreen() {
           ))
         )}
       </div>
+
+      {/* EDIT MODAL */}
+      <MealEntryModal
+        isOpen={isMealModalOpen}
+        onClose={() => {
+          setMealModalOpen(false)
+          setEditingMeal(null)
+        }}
+        onSave={handleUpdateMeal}
+        initialData={editingMeal}
+      />
     </div>
   )
 }

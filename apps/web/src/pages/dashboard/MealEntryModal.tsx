@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@repo/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@repo/ui/Card'
@@ -15,9 +16,10 @@ interface MealEntryModalProps {
   isOpen: boolean
   onClose: () => void
   onSave: (data: MealFormValues) => Promise<void>
+  initialData?: MealFormValues | null
 }
 
-export function MealEntryModal({ isOpen, onClose, onSave }: MealEntryModalProps) {
+export function MealEntryModal({ isOpen, onClose, onSave, initialData }: MealEntryModalProps) {
   const {
     register,
     handleSubmit,
@@ -32,6 +34,25 @@ export function MealEntryModal({ isOpen, onClose, onSave }: MealEntryModalProps)
       fat: 0,
     },
   })
+
+  // Update form when initialData changes (for editing)
+  useEffect(() => {
+    if (initialData) {
+      reset({
+        name: initialData.name,
+        protein: initialData.protein,
+        carbs: initialData.carbs,
+        fat: initialData.fat,
+      })
+    } else {
+      reset({
+        name: '',
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+      })
+    }
+  }, [initialData, reset])
 
   // Watch macro inputs
   const protein = watch('protein') || 0

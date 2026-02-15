@@ -71,14 +71,25 @@ export function MealEntryModal({ isOpen, onClose, onSave, initialData }: MealEnt
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
       <Card className="w-full max-w-md animate-in fade-in zoom-in duration-200">
         {/* Header */}
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle>Log a Meal</CardTitle>
+          <CardTitle id="modal-title">Log a Meal</CardTitle>
 
-          <Button variant="ghost" size="icon" onClick={onClose} disabled={isSubmitting}>
-            <X className="h-4 w-4" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            disabled={isSubmitting}
+            aria-label="Close modal"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
           </Button>
         </CardHeader>
 
@@ -137,9 +148,12 @@ export function MealEntryModal({ isOpen, onClose, onSave, initialData }: MealEnt
 
               {/* Auto-calculated calories */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Total kcal</label>
+                <label htmlFor="total-kcal" className="text-sm font-medium">
+                  Total kcal
+                </label>
 
                 <Input
+                  id="total-kcal"
                   type="number"
                   value={calories}
                   readOnly

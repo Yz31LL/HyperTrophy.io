@@ -163,3 +163,58 @@ export function calculateCaloriesBurned(workouts: Workout[]): number {
 
   return Math.round(totalCalories)
 }
+
+// --- 3. RISK ANALYSIS ---
+export type RiskLevel = 'low' | 'moderate' | 'high'
+
+export interface RiskProfile {
+  level: RiskLevel
+  score: number // 0-100 (Higher is riskier)
+  reasons: string[]
+}
+
+export function calculateTraineeRisk(
+  workouts: Workout[],
+  weightLogs: WeightLog[]
+  // In a real app we'd add meal compliance here too
+): RiskProfile {
+  let score = 0
+  const reasons: string[] = []
+
+  const now = new Date()
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+  // 1. Workout Compliance (40% Weight)
+  const recentWorkouts = workouts.filter(w => {
+    const d = w.completedAt?.toDate() || (w.date ? new Date(w.date) : null)
+    return d && d >= oneWeekAgo
+  })
+
+  if (recentWorkouts.length === 0) {
+    score += 40
+    reasons.push('No workouts logged this week')
+  } else if (recentWorkouts.length < 3) {
+    score += 20
+    reasons.push('Low workout frequency (<3 sessions)')
+  }
+
+  // 2. Plateau Detection (30% Weight)
+  const isPlateau = detectWeightPlateau(weightLogs)
+  if (isPlateau) {
+    score += 30
+    reasons.push('Weight plateau detected (2 weeks)')
+  }
+
+  // 3. Weight Logging Consistency (30% Weight)
+  const recentWeights = weightLogs.filter(l => l.date.toDate() >= oneWeekAgo)
+  if (recentWeights.length < 3) {
+    score += 30
+    reasons.push('Inconsistent weight tracking')
+  }
+
+  let level: RiskLevel = 'low'
+  if (score >= 60) level = 'high'
+  else if (score >= 30) level = 'moderate'
+
+  return { level, score, reasons }
+}

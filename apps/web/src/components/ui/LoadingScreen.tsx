@@ -3,7 +3,12 @@ import { Dumbbell } from 'lucide-react'
 
 export function LoadingScreen({ message = 'Initializing System' }: { message?: string }) {
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#09090b] text-white">
+    <div
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#09090b] text-white"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
       {/* Background Ambience */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(234,179,8,0.1),transparent_70%)] pointer-events-none" />
 
@@ -23,7 +28,7 @@ export function LoadingScreen({ message = 'Initializing System' }: { message?: s
           className="mb-6 relative"
         >
           <div className="absolute inset-0 blur-xl bg-yellow-500/20 rounded-full" />
-          <Dumbbell className="h-16 w-16 text-yellow-500 relative z-10" />
+          <Dumbbell className="h-16 w-16 text-yellow-500 relative z-10" aria-hidden="true" />
         </motion.div>
 
         {/* Logo Text */}

@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Bell,
   Search,
+  AlertTriangle,
 } from 'lucide-react'
 import { Button } from '@repo/ui/Button'
 import { useTrainees } from '../../hooks/useTrainees'
@@ -21,6 +22,12 @@ export function TrainerDashboard() {
   const { trainees, loading } = useTrainees()
   const { unreadCount } = useNotifications()
   const [isNotificationsOpen, setNotificationsOpen] = useState(false)
+  const [riskFilter, setRiskFilter] = useState<'all' | 'high' | 'moderate' | 'low'>('all')
+
+  const filteredTrainees = trainees.filter(t => {
+    if (riskFilter === 'all') return true
+    return t.riskProfile?.level === riskFilter
+  })
 
   return (
     <div className="min-h-screen bg-[#050508] text-slate-200 antialiased font-['Rajdhani',_sans-serif]">
@@ -153,39 +160,99 @@ export function TrainerDashboard() {
                 </div>
               ) : (
                 <div className="w-full space-y-4 relative z-10">
-                  <h3 className="text-xl font-cyber font-bold text-white mb-6">Active Roster</h3>
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <h3 className="text-xl font-cyber font-bold text-white">Active Roster</h3>
+
+                    {/* RISK FILTER UI */}
+                    <div className="flex items-center gap-2 p-1 bg-white/5 rounded-lg border border-white/10">
+                      {(['all', 'high', 'moderate', 'low'] as const).map(level => (
+                        <button
+                          key={level}
+                          onClick={() => setRiskFilter(level)}
+                          className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest transition-all ${
+                            riskFilter === level
+                              ? 'bg-yellow-500 text-black shadow-[0_0_10px_rgba(234,179,8,0.4)]'
+                              : 'text-zinc-500 hover:text-white'
+                          }`}
+                        >
+                          {level}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {trainees.map(trainee => (
-                      <Link
-                        key={trainee.uid}
-                        to={`/trainee-view/${trainee.uid}`}
-                        className="glass-panel p-4 rounded-xl border-white/5 bg-white/5 hover:bg-white/10 transition-all group cursor-pointer block"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 rounded-lg bg-zinc-800 flex items-center justify-center font-cyber text-lg text-yellow-500 font-bold border border-white/10">
-                            {trainee.displayName?.charAt(0) || 'T'}
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-sm font-bold text-white uppercase tracking-wider">
-                              {trainee.displayName}
+                    {filteredTrainees.map(trainee => {
+                      const risk = trainee.riskProfile
+                      const riskColors = {
+                        high: 'text-red-500 border-red-500/20 bg-red-500/10',
+                        moderate: 'text-yellow-500 border-yellow-500/20 bg-yellow-500/10',
+                        low: 'text-green-500 border-green-500/20 bg-green-500/10',
+                      }
+
+                      return (
+                        <Link
+                          key={trainee.uid}
+                          to={`/trainee-view/${trainee.uid}`}
+                          className="glass-panel p-4 rounded-xl border-white/5 bg-white/5 hover:bg-white/10 transition-all group cursor-pointer block"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-lg bg-zinc-800 flex items-center justify-center font-cyber text-lg text-yellow-500 font-bold border border-white/10">
+                              {trainee.displayName?.charAt(0) || 'T'}
                             </div>
-                            <div className="text-[10px] text-zinc-500 font-mono tracking-tighter">
-                              {trainee.email}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold text-white uppercase tracking-wider">
+                                  {trainee.displayName}
+                                </span>
+                                {risk && (
+                                  <div
+                                    className={`px-2 py-0.5 rounded-full border text-[8px] font-bold uppercase tracking-tighter ${riskColors[risk.level]}`}
+                                  >
+                                    {risk.level} risk
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-[10px] text-zinc-500 font-mono tracking-tighter">
+                                {trainee.email}
+                              </div>
+                            </div>
+                            <ArrowUpRight className="h-4 w-4 text-zinc-600 group-hover:text-yellow-500 transition-colors" />
+                          </div>
+
+                          <div className="mt-4 flex flex-col gap-2">
+                            {/* RISK REASONS */}
+                            {risk && risk.reasons.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {risk.reasons.slice(0, 2).map((reason, i) => (
+                                  <span
+                                    key={i}
+                                    className="text-[8px] text-zinc-500 bg-white/5 px-1.5 py-0.5 rounded flex items-center gap-1"
+                                  >
+                                    <AlertTriangle className="h-2 w-2 text-zinc-600" />
+                                    {reason}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className={`w-1.5 h-1.5 rounded-full animate-pulse ${risk?.level === 'high' ? 'bg-red-500' : 'bg-green-500'}`}
+                                />
+                                <span className="text-[10px] text-zinc-400 font-bold uppercase">
+                                  {risk?.level === 'high' ? 'Needs Attention' : 'On Track'}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-zinc-600 font-mono uppercase">
+                                Score: {risk?.score || 0}
+                              </div>
                             </div>
                           </div>
-                          <ArrowUpRight className="h-4 w-4 text-zinc-600 group-hover:text-yellow-500 transition-colors" />
-                        </div>
-                        <div className="mt-4 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-[10px] text-zinc-400 font-bold uppercase">
-                              On Track
-                            </span>
-                          </div>
-                          <div className="text-[10px] text-zinc-600 font-mono">LVL 04</div>
-                        </div>
-                      </Link>
-                    ))}
+                        </Link>
+                      )
+                    })}
                   </div>
                 </div>
               )}

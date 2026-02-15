@@ -8,8 +8,6 @@
 
 ## **Phase 0: Architecture & Standards (The "Exceptional" Foundation)**
 
-_Goal: Establish documentation and quality standards to meet Rubric Level 5._
-
 - [x] **Architecture Decision Records (ADRs)**
   - [x] Create `docs/adr/001-monorepo-structure.md` (Why Turborepo?).
   - [x] Create `docs/adr/002-client-side-logic.md` (Why no backend logic?).
@@ -101,7 +99,7 @@ _Goal: Visual feedback and Plateau detection._
 - [x] **Muscle Heatmap**
   - [x] Create SVG mapping of muscle groups.
   - [x] Logic: `getWeeklyVolume()` -> `highlightMuscleGroup()`.
-  - [x] **A11y:** Ensure Heatmap has a tabular data fallback for screen readers (Rubric: Design L5).
+  - [x] **A11y:** Ensure Heatmap has a tabular data fallback for screen readers.
 - [x] **Plateau Detector**
   - [x] Logic: `avg_weight_last_7` vs `avg_weight_prev_7`.
   - [x] UI: "Plateau Detected" warning card with entrance animation.
@@ -125,28 +123,55 @@ _Goal: Upgrade current UI to "Premium" standard._
 
 _Goal: The Dual-Sided Marketplace features._
 
-- [ ] **Trainer Dashboard**
-  - [ ] Fetch list of linked Trainees.
-  - [ ] **Ops:** Implement **Client Risk Analysis** filter (Rubric: Product Mgmt L5).
+- [x] **Trainer Dashboard**
+
+  - [x] Fetch list of linked Trainees (via `useTrainees`).
+  - [x] **Trainee Perspective:** Implement `TraineeDetailScreen` for live coach monitoring.
+  - [x] **Ops:** Implement **Client Risk Analysis** filter.
+
+- [x] **System Communications**
+  - [x] **Feature:** Notification System (Alerts for trainer/trainee linking).
+  - [x] **History:** Dedicated `HistoryScreen` for chronological nutrition/workout audit.
 
 ---
 
 ## **Phase 7: Security, Quality & Production Readiness**
 
-_Goal: Meet "5 - Exceptional" standards across all categories._
+- [x] **Formal A11y Audit**
+  - [x] Run **Lighthouse CI** and target 100/100 Accessibility score.
+- [x] **Advanced Testing & Security**
 
-- [ ] **Formal A11y Audit**
-  - [ ] Run **Lighthouse CI** and target 100/100 Accessibility score.
-- [ ] **Advanced Testing & Security**
-
-  - [ ] **E2E:** Implement Playwright tests with ≥80% coverage.
-  - [ ] **Security:** Document **Threat Model** in `docs/security/THREAT_MODEL.md`.
+  - [x] **E2E:** Implement Playwright tests with ≥80% coverage.
+  - [x] **Security:** Document **Threat Model** in `docs/security/THREAT_MODEL.md`.
   - [ ] **Security:** Maintain an exemplary **ADR trail** in `/docs/adr`.
 
 - [ ] **Infrastructure & Ops**
   - [ ] **DevOps:** Setup **Canary Deploys** with automated rollbacks.
   - [ ] **Analytics:** Implement **PostHog/Mixpanel** for data-driven decisions.
   - [ ] **PM:** Setup automated public changelog from Changesets.
+
+---
+
+## **Phase 9: Deep Analytics & Progressive Overload**
+
+_Goal: Move from "Tracking" to "Insight"._
+
+- [ ] **Exercise PRs (Personal Records)**
+  - [ ] Logic: Auto-detect heaviest lift or highest volume per exercise.
+  - [ ] UI: Medal icons next to PR lifts in the log.
+- [ ] **Progressive Overload Trends**
+  - [ ] Logic: Track 1RM estimates or Volume over time.
+  - [ ] Visual: Trend lines showing strength growth across macro-cycles.
+
+---
+
+## **Phase 10: Scaling & Content**
+
+- [ ] **Trainer Exercise Library**
+  - [ ] Build: Custom exercise creator for trainers (assign to trainees).
+- [ ] **Social/Engagement**
+  - [ ] Weekly leaderboards (Optional/Opt-in).
+  - [ ] Trainer "Broadcast" messages to all trainees.
 
 ---
 

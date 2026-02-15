@@ -43,14 +43,25 @@ export function WeightEntryModal({ isOpen, onClose }: WeightEntryModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="weight-modal-title"
+    >
       <Card className="w-full max-w-sm bg-zinc-950 border-zinc-800">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-white flex items-center gap-2">
-            <Scale className="h-5 w-5 text-blue-500" /> Log Weight
+          <CardTitle id="weight-modal-title" className="text-white flex items-center gap-2">
+            <Scale className="h-5 w-5 text-blue-500" aria-hidden="true" /> Log Weight
           </CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose} className="text-zinc-400">
-            <X className="h-4 w-4" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="text-zinc-400"
+            aria-label="Close modal"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
           </Button>
         </CardHeader>
         <CardContent>

@@ -240,12 +240,17 @@ export function DashboardScreen() {
           </div>
           <div className="flex items-center gap-6">
             <div className="relative">
-              <Bell
-                className={`h-6 w-6 cursor-pointer transition-colors ${isNotificationsOpen ? 'text-yellow-500' : 'text-slate-400 hover:text-white'}`}
+              <button
+                aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
+                className="focus:outline-none focus:ring-2 focus:ring-yellow-500 rounded-full p-1"
                 onClick={() => setNotificationsOpen(!isNotificationsOpen)}
-              />
+              >
+                <Bell
+                  className={`h-6 w-6 transition-colors ${isNotificationsOpen ? 'text-yellow-500' : 'text-slate-400 hover:text-white'}`}
+                />
+              </button>
               {unreadCount > 0 && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center text-[10px] text-black font-bold">
+                <div className="pointer-events-none absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center text-[10px] text-black font-bold">
                   {unreadCount}
                 </div>
               )}

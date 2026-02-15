@@ -11,6 +11,8 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:coverage": "turbo run test -- --coverage",
+    "test:e2e": "playwright test",
+    "lint:a11y": "lhci autorun",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,yaml,yml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json,yaml,yml}\"",
     "sync:lint": "syncpack lint",
@@ -23,8 +25,10 @@
     "precheck": "pnpm lint && pnpm typecheck && pnpm build && pnpm test"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
     "@changesets/cli": "^2.27.1",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.58.2",
+    "@repo/eslint-config": "workspace:*",
     "cross-env": "^10.1.0",
     "eslint": "^8.57.0",
     "firebase-admin": "^13.6.1",

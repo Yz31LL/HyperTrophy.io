@@ -153,6 +153,7 @@ export function HistoryScreen() {
           variant="ghost"
           size="icon"
           onClick={() => navigate('/dashboard')}
+          aria-label="Back to Dashboard"
           className="text-zinc-400 hover:text-white"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -161,8 +162,13 @@ export function HistoryScreen() {
       </div>
 
       {/* TABS */}
-      <div className="grid grid-cols-2 gap-2 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
+      <div
+        className="grid grid-cols-2 gap-2 bg-zinc-900 p-1 rounded-lg border border-zinc-800"
+        role="tablist"
+      >
         <button
+          role="tab"
+          aria-selected={activeTab === 'workouts'}
           onClick={() => setActiveTab('workouts')}
           className={`flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'workouts'
@@ -170,9 +176,11 @@ export function HistoryScreen() {
               : 'text-zinc-500 hover:text-zinc-300'
           }`}
         >
-          <Dumbbell className="h-4 w-4" /> Workouts
+          <Dumbbell className="h-4 w-4" aria-hidden="true" /> Workouts
         </button>
         <button
+          role="tab"
+          aria-selected={activeTab === 'nutrition'}
           onClick={() => setActiveTab('nutrition')}
           className={`flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'nutrition'
@@ -180,7 +188,7 @@ export function HistoryScreen() {
               : 'text-zinc-500 hover:text-zinc-300'
           }`}
         >
-          <Utensils className="h-4 w-4" /> Nutrition
+          <Utensils className="h-4 w-4" aria-hidden="true" /> Nutrition
         </button>
       </div>
 
@@ -215,9 +223,10 @@ export function HistoryScreen() {
                       {/* DELETE BUTTON (Workouts) */}
                       <button
                         onClick={() => handleDelete('workouts', workout.id)}
+                        aria-label={`Delete workout ${workout.name}`}
                         className="text-zinc-600 hover:text-red-500 transition-colors p-1"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </button>
                     </div>
                   </div>
@@ -255,16 +264,18 @@ export function HistoryScreen() {
 
                     <button
                       onClick={() => handleEditMealClick(meal)}
+                      aria-label={`Edit meal ${meal.name}`}
                       className="text-zinc-500 hover:text-blue-400 transition-colors p-1"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="h-4 w-4" aria-hidden="true" />
                     </button>
 
                     <button
                       onClick={() => handleDelete('meals', meal.id)}
+                      aria-label={`Delete meal ${meal.name}`}
                       className="text-zinc-500 hover:text-red-500 transition-colors p-1"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
                     </button>
                   </div>
                 </div>

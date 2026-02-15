@@ -12,7 +12,7 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import { db, auth } from '../lib/firebase'
-import { Notification } from '@repo/shared/schemas/notification'
+import { Notification } from '@repo/shared/schemas'
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([])

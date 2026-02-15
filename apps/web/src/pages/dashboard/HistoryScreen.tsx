@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { LoadingScreen } from '../../components/ui/LoadingScreen'
 import {
   collection,
   query,
@@ -186,7 +187,9 @@ export function HistoryScreen() {
       {/* CONTENT LIST */}
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center py-10 text-zinc-500">Loading history...</div>
+          <div className="py-20 flex justify-center items-center">
+            <LoadingScreen message="Retrieving History" />
+          </div>
         ) : activeTab === 'workouts' ? (
           // WORKOUTS LIST
           workouts.length === 0 ? (

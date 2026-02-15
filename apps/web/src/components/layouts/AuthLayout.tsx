@@ -16,7 +16,7 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
       {/* GLOWING HEADER */}
       <div className="z-10 mb-8 text-center relative">
         <h1 className="font-hyper-custom text-6xl md:text-8xl font-bold tracking-wider text-glow uppercase">
-          HyperTrophy
+          Hyper<span className="text-yellow-500">Trophy</span>
         </h1>
         <p className="text-zinc-400 mt-2 text-sm uppercase tracking-[0.2em]">Forge Your Legacy</p>
       </div>

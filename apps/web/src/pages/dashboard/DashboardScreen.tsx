@@ -28,6 +28,7 @@ import {
 import { EnergyFlux } from './EnergyFlux'
 import { DashboardStatCard } from './DashboardStatCard'
 import { ActionButtonSection } from './ActionButtonSection'
+import { LoadingScreen } from '../../components/ui/LoadingScreen'
 
 export function DashboardScreen() {
   const [isMealModalOpen, setMealModalOpen] = useState(false)
@@ -157,10 +158,7 @@ export function DashboardScreen() {
     }
   }, [totalConsumed, targetCalories, loading, hasCelebrated, profile])
 
-  if (loading)
-    return (
-      <div className="p-8 text-center bg-black text-white min-h-screen">Loading your plan...</div>
-    )
+  if (loading) return <LoadingScreen message="Loading Your Plan" />
 
   if (!profile) {
     return (
@@ -227,7 +225,7 @@ export function DashboardScreen() {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-6">
           <div>
             <h1 className="text-4xl font-cyber font-bold tracking-wider text-white">
-              HYPER<span className="text-[#00f3ff]">TROPHY</span>
+              Hyper<span className="text-yellow-500">Trophy</span>
             </h1>
             <p className="text-slate-400 font-medium text-lg mt-1 tracking-wide">
               Welcome back,{' '}

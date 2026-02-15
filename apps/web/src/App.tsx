@@ -7,11 +7,13 @@ import { useAuth } from './providers/AuthProvider'
 import { WorkoutSession } from './pages/workout/WorkoutSession'
 import { HistoryScreen } from './pages/dashboard/HistoryScreen'
 
+import { LoadingScreen } from './components/ui/LoadingScreen'
+
 // A wrapper to protect routes that require login
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth()
 
-  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>
+  if (loading) return <LoadingScreen message="Establishing Connection" />
 
   // If not logged in, redirect to login page
   if (!user) return <Navigate to="/login" replace />

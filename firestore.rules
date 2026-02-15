@@ -9,20 +9,32 @@ service cloud.firestore {
 
     // USERS Collection
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      // Allow authenticated users to read (needed for trainer lookup by invite code)
+      allow read: if request.auth != null;
+      allow write: if isOwner(userId);
 
-      // Explicitly allow sub-collections for the owner
+      // Helper for Trainer Access
+      function isTrainerOf(traineeId) {
+        return request.auth != null && 
+               get(/databases/$(database)/documents/users/$(traineeId)).data.trainerId == request.auth.uid;
+      }
+
+      // Explicitly allow sub-collections for the owner and their trainer
       match /workouts/{docId} {
-        allow read, write: if isOwner(userId);
+        allow read: if isOwner(userId) || isTrainerOf(userId);
+        allow write: if isOwner(userId);
       }
       match /meals/{docId} {
-        allow read, write: if isOwner(userId);
+        allow read: if isOwner(userId) || isTrainerOf(userId);
+        allow write: if isOwner(userId);
       }
       match /weight_logs/{docId} {
-        allow read, write: if isOwner(userId);
+        allow read: if isOwner(userId) || isTrainerOf(userId);
+        allow write: if isOwner(userId);
       }
       match /private_profile/{document=**} {
-        allow read, write: if isOwner(userId);
+        allow read: if isOwner(userId) || isTrainerOf(userId);
+        allow write: if isOwner(userId);
       }
     }
 
@@ -31,6 +43,12 @@ service cloud.firestore {
       allow read: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
       allow update: if isOwner(resource.data.userId);
+    }
+
+    // NOTIFICATIONS Collection
+    match /notifications/{notifId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if request.auth != null;
     }
   }
 }

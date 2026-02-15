@@ -42,6 +42,7 @@ describe('CreateUserSchema', () => {
     const result = CreateUserSchema.safeParse({
       email: 'new@example.com',
       name: 'New User',
+      role: 'trainee',
     })
     expect(result.success).toBe(true)
   })

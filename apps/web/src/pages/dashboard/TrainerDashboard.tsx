@@ -17,11 +17,14 @@ import { InviteCard } from './InviteCard'
 import { auth } from '../../lib/firebase'
 import { NotificationPanel } from '../../components/NotificationPanel'
 import { useNotifications } from '../../hooks/useNotifications'
+import { BroadcastModal } from '../../components/BroadcastModal'
+import { Megaphone } from 'lucide-react'
 
 export function TrainerDashboard() {
   const { trainees, loading } = useTrainees()
   const { unreadCount } = useNotifications()
   const [isNotificationsOpen, setNotificationsOpen] = useState(false)
+  const [isBroadcastOpen, setBroadcastOpen] = useState(false)
   const [riskFilter, setRiskFilter] = useState<'all' | 'high' | 'moderate' | 'low'>('all')
 
   const filteredTrainees = trainees.filter(t => {
@@ -76,6 +79,13 @@ export function TrainerDashboard() {
                 onClose={() => setNotificationsOpen(false)}
               />
             </div>
+            <button
+              onClick={() => setBroadcastOpen(true)}
+              className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 hover:bg-yellow-500/20 transition-all group"
+              title="Broadcast to all trainees"
+            >
+              <Megaphone className="h-5 w-5 group-hover:scale-110 transition-transform" />
+            </button>
             <div className="h-10 w-10 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center font-bold text-yellow-500 font-cyber mr-2">
               M
             </div>
@@ -288,11 +298,21 @@ export function TrainerDashboard() {
                 <Button className="w-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-bold border border-blue-500/20 h-11">
                   MANAGE SCHEDULE
                 </Button>
+                <Link to="/trainer-library" className="block w-full">
+                  <Button className="w-full bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 font-bold border border-yellow-500/20 h-11">
+                    EXERCISE LIBRARY
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
         </div>
       </div>
+      <BroadcastModal
+        isOpen={isBroadcastOpen}
+        onClose={() => setBroadcastOpen(false)}
+        trainees={trainees}
+      />
     </div>
   )
 }

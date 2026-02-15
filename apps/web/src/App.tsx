@@ -13,6 +13,8 @@ import { LoadingScreen } from './components/ui/LoadingScreen'
 
 import { useUserRole } from './hooks/useUserRole'
 import { TraineeDetailScreen } from './pages/dashboard/TraineeDetailScreen'
+import { TrainerExerciseLibrary } from './pages/dashboard/TrainerExerciseLibrary'
+import { LeaderboardScreen } from './pages/dashboard/LeaderboardScreen'
 
 // A wrapper to protect routes that require login
 function ProtectedRoute({
@@ -108,10 +110,26 @@ export function App() {
           }
         />
         <Route
+          path="/trainer-library"
+          element={
+            <ProtectedRoute allowedRoles={['trainer']}>
+              <TrainerExerciseLibrary />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/history"
           element={
             <ProtectedRoute allowedRoles={['trainee']}>
               <HistoryScreen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/leaderboard"
+          element={
+            <ProtectedRoute allowedRoles={['trainee']}>
+              <LeaderboardScreen />
             </ProtectedRoute>
           }
         />

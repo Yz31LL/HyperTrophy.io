@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { collection, onSnapshot, doc, getDoc } from 'firebase/firestore'
+import { collection, onSnapshot, doc, getDoc, Timestamp } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import {
   calculateBMR,
@@ -16,8 +16,29 @@ import { MuscleHeatmap } from './MuscleHeatmap'
 import { WeightChart } from './WeightChart'
 import { DashboardStatCard } from './DashboardStatCard'
 import { LoadingScreen } from '../../components/ui/LoadingScreen'
-import { ArrowLeft, User } from 'lucide-react'
+import { ArrowLeft, User, Dumbbell, Plus, Trash2, X } from 'lucide-react'
 import { UserData } from '../../hooks/useUserRole'
+import { Button } from '@repo/ui/Button'
+import { auth } from '../../lib/firebase'
+import { addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+import { Link } from 'react-router-dom'
+
+interface AssignedExercise {
+  id: string
+  name: string
+  muscleGroup: MuscleGroup
+  category: string
+  description?: string
+  assignedAt?: Timestamp
+}
+
+interface LibraryExercise {
+  id: string
+  name: string
+  muscleGroup: MuscleGroup
+  category: string
+  description?: string
+}
 
 export function TraineeDetailScreen() {
   const { uid } = useParams<{ uid: string }>()
@@ -30,6 +51,9 @@ export function TraineeDetailScreen() {
   const [volumeData, setVolumeData] = useState<Record<MuscleGroup, number> | null>(null)
   const [weightHistory, setWeightHistory] = useState<WeightLog[]>([])
   const [loading, setLoading] = useState(true)
+  const [assignedExercises, setAssignedExercises] = useState<AssignedExercise[]>([])
+  const [libraryExercises, setLibraryExercises] = useState<LibraryExercise[]>([])
+  const [isAssignModalOpen, setAssignModalOpen] = useState(false)
 
   useEffect(() => {
     if (!uid) return
@@ -92,10 +116,36 @@ export function TraineeDetailScreen() {
       setLoading(false)
     })
 
+    // 5. Fetch Library Exercises (from trainer's own library)
+    const trainerUid = auth.currentUser?.uid
+    let unsubLibrary = () => {}
+    if (trainerUid) {
+      unsubLibrary = onSnapshot(
+        collection(db, 'users', trainerUid, 'custom_exercises'),
+        snapshot => {
+          setLibraryExercises(
+            snapshot.docs.map(d => ({ id: d.id, ...d.data() }) as LibraryExercise)
+          )
+        }
+      )
+    }
+
+    // 6. Fetch Assigned Exercises
+    const unsubAssigned = onSnapshot(
+      collection(db, 'users', uid, 'assigned_exercises'),
+      snapshot => {
+        setAssignedExercises(
+          snapshot.docs.map(d => ({ id: d.id, ...d.data() }) as AssignedExercise)
+        )
+      }
+    )
+
     return () => {
       unsubMeals()
       unsubWorkouts()
       unsubWeight()
+      unsubLibrary()
+      unsubAssigned()
     }
   }, [uid])
 
@@ -220,9 +270,122 @@ export function TraineeDetailScreen() {
               <h3 className="text-lg font-cyber font-bold text-white mb-6">Weight Journey</h3>
               <WeightChart history={weightHistory} />
             </div>
+
+            <div className="glass-panel rounded-2xl p-6 space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-cyber font-bold text-white flex items-center gap-2">
+                  <Dumbbell className="h-5 w-5 text-yellow-500" />
+                  Assigned Protocols
+                </h3>
+                <Button
+                  onClick={() => setAssignModalOpen(true)}
+                  className="bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 h-9 px-4 text-xs font-bold font-cyber"
+                >
+                  ASSIGN NEW
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {assignedExercises.length === 0 ? (
+                  <div className="md:col-span-2 py-8 text-center border-2 border-dashed border-white/5 rounded-xl">
+                    <p className="text-zinc-500 text-xs font-cyber uppercase tracking-widest">
+                      No custom exercises assigned
+                    </p>
+                  </div>
+                ) : (
+                  assignedExercises.map(ex => (
+                    <div
+                      key={ex.id}
+                      className="p-4 rounded-xl bg-white/5 border border-white/5 group"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="text-sm font-bold text-white uppercase font-cyber tracking-tight">
+                            {ex.name}
+                          </h4>
+                          <span className="text-[10px] text-zinc-500 font-mono uppercase">
+                            {ex.muscleGroup} // {ex.category}
+                          </span>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            if (window.confirm('Remove assignment?')) {
+                              await deleteDoc(doc(db, 'users', uid!, 'assigned_exercises', ex.id))
+                            }
+                          }}
+                          className="p-1.5 rounded bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Assign Modal */}
+      {isAssignModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="glass-panel w-full max-w-lg rounded-2xl border-yellow-500/20 overflow-hidden">
+            <div className="p-6 border-b border-white/5 flex justify-between items-center">
+              <h3 className="text-xl font-cyber font-bold text-white">Assign Movement</h3>
+              <button
+                onClick={() => setAssignModalOpen(false)}
+                className="text-zinc-500 hover:text-white"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-6 max-h-[60vh] overflow-y-auto space-y-4">
+              {libraryExercises.length === 0 ? (
+                <div className="text-center py-10 text-zinc-500">
+                  <p>Your library is empty.</p>
+                  <Link
+                    to="/trainer-library"
+                    className="text-yellow-500 text-xs font-bold uppercase mt-2 block"
+                  >
+                    Go to Library
+                  </Link>
+                </div>
+              ) : (
+                libraryExercises.map(ex => (
+                  <button
+                    key={ex.id}
+                    onClick={async () => {
+                      const alreadyAssigned = assignedExercises.find(a => a.name === ex.name)
+                      if (alreadyAssigned) {
+                        alert('Already assigned.')
+                        return
+                      }
+                      await addDoc(collection(db, 'users', uid!, 'assigned_exercises'), {
+                        name: ex.name,
+                        muscleGroup: ex.muscleGroup,
+                        category: ex.category,
+                        description: ex.description,
+                        assignedAt: serverTimestamp(),
+                      })
+                      setAssignModalOpen(false)
+                    }}
+                    className="w-full p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/20 text-left transition-all"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-white uppercase font-cyber">{ex.name}</span>
+                      <Plus className="h-4 w-4 text-zinc-500" />
+                    </div>
+                    <p className="text-[10px] text-zinc-500 font-mono uppercase mt-1">
+                      {ex.muscleGroup} // {ex.category}
+                    </p>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

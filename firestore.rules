@@ -36,6 +36,15 @@ service cloud.firestore {
         allow read: if isOwner(userId) || isTrainerOf(userId);
         allow write: if isOwner(userId);
       }
+
+      // Phase 10: Scaling & Content
+      match /custom_exercises/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /assigned_exercises/{docId} {
+        allow read: if isOwner(userId) || isTrainerOf(userId);
+        allow write: if isTrainerOf(userId);
+      }
     }
 
     // DAILY LOGS (Legacy or Shared)
@@ -49,6 +58,12 @@ service cloud.firestore {
     match /notifications/{notifId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if request.auth != null;
+    }
+
+    // LEADERBOARDS Collection
+    match /leaderboards/{boardId}/entries/{userId} {
+      allow read: if request.auth != null;
+      allow write: if isOwner(userId);
     }
   }
 }

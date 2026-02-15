@@ -1,7 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus } from 'lucide-react'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  onSnapshot,
+  doc,
+  getDoc,
+  setDoc,
+} from 'firebase/firestore'
 
 // --- IMPORTS ---
 import { db, auth } from '../../lib/firebase'
@@ -100,6 +108,23 @@ export function WorkoutSession() {
   const [sessionName, setSessionName] = useState('')
   const [exercises, setExercises] = useState<ExerciseLog[]>([createExercise('Bench Press (Flat)')])
   const [selectedExerciseToAdd, setSelectedExerciseToAdd] = useState('')
+  const [customExercises, setCustomExercises] = useState<{ id: string; name: string }[]>([])
+
+  // --- EFFECT: FETCH CUSTOM EXERCISES ---
+  useEffect(() => {
+    const user = auth.currentUser
+    if (!user) return
+
+    const unsubscribe = onSnapshot(
+      collection(db, 'users', user.uid, 'assigned_exercises'),
+      snapshot => {
+        setCustomExercises(
+          snapshot.docs.map(d => ({ id: d.id, ...d.data() }) as { id: string; name: string })
+        )
+      }
+    )
+    return () => unsubscribe()
+  }, [])
 
   // --- TIMER STATE ---
   const startTime = useRef<number>(Date.now())
@@ -204,6 +229,16 @@ export function WorkoutSession() {
     const finalDurationMin = Math.ceil(elapsedSeconds / 60)
     const finalCalories = calculateLiveCalories()
 
+    // Calculate Volume for Leaderboard
+    let sessionVolume = 0
+    exercises.forEach(ex => {
+      ex.sets.forEach(set => {
+        if (set.completed && typeof set.weight === 'number' && typeof set.reps === 'number') {
+          sessionVolume += set.weight * set.reps
+        }
+      })
+    })
+
     try {
       const cleanExercises = exercises.map(ex => ({
         ...ex,
@@ -223,6 +258,33 @@ export function WorkoutSession() {
         exercises: cleanExercises,
         completedAt: serverTimestamp(),
       })
+
+      // Sync with Leaderboard if opted in
+      const currentWeekId = () => {
+        const d = new Date()
+        const year = d.getFullYear()
+        const firstDayOfYear = new Date(year, 0, 1)
+        const pastDaysOfYear = (d.getTime() - firstDayOfYear.getTime()) / 86400000
+        const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7)
+        return `${year}-w${weekNum}`
+      }
+      const weekId = currentWeekId()
+      const leaderboardRef = doc(db, 'leaderboards', weekId, 'entries', user.uid)
+      const leaderboardSnap = await getDoc(leaderboardRef)
+
+      if (leaderboardSnap.exists() && leaderboardSnap.data().optIn) {
+        const currentVolume = leaderboardSnap.data().volume || 0
+        await setDoc(
+          leaderboardRef,
+          {
+            volume: currentVolume + sessionVolume,
+            lastUpdated: serverTimestamp(),
+            displayName: user.displayName || 'Anonymous',
+            uid: user.uid,
+          },
+          { merge: true }
+        )
+      }
 
       navigate('/dashboard')
     } catch (error) {
@@ -325,6 +387,15 @@ export function WorkoutSession() {
                     ))}
                   </optgroup>
                 ))}
+                {customExercises.length > 0 && (
+                  <optgroup label="Custom Assigned" className="text-yellow-500 font-bold">
+                    {customExercises.map(ex => (
+                      <option key={ex.id} value={ex.name}>
+                        {ex.name} (Assigned)
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500 dark:text-gray-400">
                 <span className="material-icons-round">search</span>

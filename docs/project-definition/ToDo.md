@@ -169,11 +169,11 @@ _Goal: Move from "Tracking" to "Insight"._
 
 ## **Phase 10: Scaling & Content**
 
-- [ ] **Trainer Exercise Library**
-  - [ ] Build: Custom exercise creator for trainers (assign to trainees).
-- [ ] **Social/Engagement**
-  - [ ] Weekly leaderboards (Optional/Opt-in).
-  - [ ] Trainer "Broadcast" messages to all trainees.
+- [x] **Trainer Exercise Library**
+  - [x] Build: Custom exercise creator for trainers (assign to trainees).
+- [x] **Social/Engagement**
+  - [x] Weekly leaderboards (Optional/Opt-in).
+  - [x] Trainer "Broadcast" messages to all trainees.
 
 ---
 

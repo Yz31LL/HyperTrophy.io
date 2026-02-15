@@ -30,7 +30,7 @@ import { DashboardStatCard } from './DashboardStatCard'
 import { ActionButtonSection } from './ActionButtonSection'
 import { LoadingScreen } from '../../components/ui/LoadingScreen'
 import { InviteCard } from './InviteCard'
-import { Bell } from 'lucide-react'
+import { Bell, Trophy } from 'lucide-react'
 import { NotificationPanel } from '../../components/NotificationPanel'
 import { useNotifications } from '../../hooks/useNotifications'
 
@@ -259,6 +259,14 @@ export function DashboardScreen() {
                 onClose={() => setNotificationsOpen(false)}
               />
             </div>
+
+            <Link
+              to="/leaderboard"
+              className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 hover:bg-yellow-500/20 transition-all group"
+              title="Weekly Leaderboard"
+            >
+              <Trophy className="h-5 w-5 group-hover:scale-110 transition-transform" />
+            </Link>
 
             <span className="px-3 py-1 rounded-full bg-[#00ff9d]/10 border border-[#00ff9d]/20 text-[#00ff9d] text-xs font-bold uppercase tracking-wider animate-pulse">
               System Online

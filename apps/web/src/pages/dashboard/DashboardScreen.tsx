@@ -30,11 +30,15 @@ import { DashboardStatCard } from './DashboardStatCard'
 import { ActionButtonSection } from './ActionButtonSection'
 import { LoadingScreen } from '../../components/ui/LoadingScreen'
 import { InviteCard } from './InviteCard'
-import { Bell, Trophy } from 'lucide-react'
+import { Bell, Trophy, Calendar, Clock } from 'lucide-react'
 import { NotificationPanel } from '../../components/NotificationPanel'
 import { useNotifications } from '../../hooks/useNotifications'
+import { useCalendarEvents } from '../../hooks/useCalendarEvents'
+import { format } from 'date-fns'
+import { cn } from '@repo/ui/utils'
 
 export function DashboardScreen() {
+  const { events: scheduleEvents, loading: scheduleLoading } = useCalendarEvents({ limitToNext: 3 })
   const [isMealModalOpen, setMealModalOpen] = useState(false)
   const [isWeightModalOpen, setWeightModalOpen] = useState(false)
   const [consumedMacros, setConsumedMacros] = useState({ protein: 0, carbs: 0, fat: 0 })
@@ -227,13 +231,13 @@ export function DashboardScreen() {
         }
       `}</style>
 
-      <div className="max-w-6xl mx-auto p-6 md:p-8 space-y-10">
+      <div className="max-w-6xl 2xl:max-w-7xl 3xl:max-w-[120rem] mx-auto p-6 md:p-8 space-y-10">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-6">
-          <div>
-            <h1 className="text-4xl font-cyber font-bold tracking-wider text-white">
+          <div className="w-full md:w-auto">
+            <h1 className="text-3xl sm:text-4xl 3xl:text-6xl font-cyber font-bold tracking-wider text-white">
               Hyper<span className="text-yellow-500">Trophy</span>
             </h1>
-            <p className="text-slate-400 font-medium text-lg mt-1 tracking-wide">
+            <p className="text-slate-400 font-medium text-base sm:text-lg 3xl:text-2xl mt-1 tracking-wide">
               Welcome back,{' '}
               <span className="text-white">{user?.displayName?.split(' ')[0] || 'Member'}</span>
             </p>
@@ -311,6 +315,63 @@ export function DashboardScreen() {
                     <p className="text-sm text-slate-400">Loading Heatmap...</p>
                   </div>
                 )}
+              </div>
+            </div>
+
+            <div className="glass-panel rounded-2xl p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-cyber font-bold text-white flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-blue-500" /> Mission Schedule
+                </h3>
+              </div>
+              <div className="space-y-4">
+                {scheduleLoading ? (
+                  <div className="py-8 text-center text-zinc-600 text-[10px] font-mono uppercase animate-pulse">
+                    Syncing Trajectory...
+                  </div>
+                ) : scheduleEvents.length === 0 ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-zinc-600 border border-dashed border-white/5 rounded-2xl">
+                    <Clock className="h-8 w-8 mb-2 opacity-20" />
+                    <p className="text-[10px] font-cyber uppercase tracking-widest text-center px-4">
+                      No operations currently assigned
+                    </p>
+                  </div>
+                ) : (
+                  scheduleEvents.map(event => (
+                    <div
+                      key={event.id}
+                      className="flex gap-4 items-center p-3 rounded-xl bg-white/5 border border-white/5 hover:border-yellow-500/20 transition-all group"
+                    >
+                      <div className="h-10 w-10 rounded-lg bg-zinc-800 flex flex-col items-center justify-center font-bold border border-white/5">
+                        <span className="text-[8px] text-zinc-500 uppercase">
+                          {format(event.date.toDate(), 'MMM')}
+                        </span>
+                        <span className="text-xs text-white">
+                          {format(event.date.toDate(), 'd')}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[10px] font-bold text-white uppercase truncate">
+                          {event.title}
+                        </div>
+                        <div className="text-[8px] text-zinc-500 font-mono uppercase flex items-center gap-1">
+                          <span
+                            className={cn(
+                              'w-1 h-1 rounded-full',
+                              event.type === 'workout' ? 'bg-blue-500' : 'bg-yellow-500'
+                            )}
+                          />
+                          {event.type} — {format(event.date.toDate(), 'HH:mm')}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+                <Link to="/calendar" className="w-full block pt-2">
+                  <Button className="w-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-bold border border-blue-500/20 h-11 uppercase text-[10px] tracking-widest">
+                    OPEN TACTICAL VIEW
+                  </Button>
+                </Link>
               </div>
             </div>
 

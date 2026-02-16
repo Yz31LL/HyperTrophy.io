@@ -36,28 +36,28 @@ export function DashboardStatCard({
         style={{ background: `linear-gradient(to bottom right, ${themeColor}33, black 90%)` }}
       />
       <div className="relative z-10 p-6 flex flex-col h-full justify-between">
-        <div className="flex items-center gap-2 mb-4" style={{ color: themeColor }}>
+        <div className="flex items-center gap-2 mb-4 3xl:mb-8" style={{ color: themeColor }}>
           {iconName ? (
-            <span className="material-symbols-outlined">{iconName}</span>
+            <span className="material-symbols-outlined 3xl:text-4xl">{iconName}</span>
           ) : (
             <div
-              className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]"
+              className="w-2 h-2 3xl:w-4 3xl:h-4 rounded-full shadow-[0_0_8px_currentColor]"
               style={{ backgroundColor: themeColor }}
             />
           )}
-          <span className="font-cyber text-sm tracking-widest uppercase">{title}</span>
+          <span className="font-cyber text-sm 3xl:text-2xl tracking-widest uppercase">{title}</span>
         </div>
         <div>
-          <div className="text-4xl font-bold text-white font-cyber tracking-tighter">
+          <div className="text-4xl 3xl:text-7xl font-bold text-white font-cyber tracking-tighter">
             {value}
             <span
-              className="text-lg font-normal font-sans ml-1"
+              className="text-lg 3xl:text-3xl font-normal font-sans ml-1"
               style={{ color: `${themeColor}cc` }}
             >
               {unit}
             </span>
           </div>
-          <p className="text-xs text-white/40 mt-1">{label}</p>
+          <p className="text-xs 3xl:text-xl text-white/40 mt-1 3xl:mt-3">{label}</p>
         </div>
         <div className="w-full bg-white/10 h-1 mt-4 rounded-full overflow-hidden">
           <div

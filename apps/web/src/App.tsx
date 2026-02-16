@@ -15,6 +15,7 @@ import { useUserRole } from './hooks/useUserRole'
 import { TraineeDetailScreen } from './pages/dashboard/TraineeDetailScreen'
 import { TrainerExerciseLibrary } from './pages/dashboard/TrainerExerciseLibrary'
 import { LeaderboardScreen } from './pages/dashboard/LeaderboardScreen'
+import { CalendarScreen } from './pages/dashboard/CalendarScreen'
 
 // A wrapper to protect routes that require login
 function ProtectedRoute({
@@ -134,6 +135,14 @@ export function App() {
           }
         />
 
+        <Route
+          path="/calendar"
+          element={
+            <ProtectedRoute>
+              <CalendarScreen />
+            </ProtectedRoute>
+          }
+        />
         {/* Default Redirect */}
         <Route path="/" element={getHomeRedirect()} />
       </Routes>

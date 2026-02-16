@@ -19,10 +19,14 @@ import { NotificationPanel } from '../../components/NotificationPanel'
 import { useNotifications } from '../../hooks/useNotifications'
 import { BroadcastModal } from '../../components/BroadcastModal'
 import { Megaphone } from 'lucide-react'
+import { useCalendarEvents } from '../../hooks/useCalendarEvents'
+import { format } from 'date-fns'
+import { cn } from '@repo/ui/utils'
 
 export function TrainerDashboard() {
   const { trainees, loading } = useTrainees()
   const { unreadCount } = useNotifications()
+  const { events: scheduleEvents, loading: scheduleLoading } = useCalendarEvents({ limitToNext: 3 })
   const [isNotificationsOpen, setNotificationsOpen] = useState(false)
   const [isBroadcastOpen, setBroadcastOpen] = useState(false)
   const [riskFilter, setRiskFilter] = useState<'all' | 'high' | 'moderate' | 'low'>('all')
@@ -280,24 +284,51 @@ export function TrainerDashboard() {
                 <Calendar className="h-5 w-5 text-blue-500" /> Training Calendar
               </h3>
               <div className="space-y-3">
-                {[1, 2, 3].map(i => (
-                  <div
-                    key={i}
-                    className="flex gap-3 items-center p-3 rounded-xl bg-white/5 border border-white/5 opacity-50"
-                  >
-                    <div className="h-10 w-10 rounded-lg bg-zinc-800 flex flex-col items-center justify-center font-bold">
-                      <span className="text-[8px] text-zinc-500">FEB</span>
-                      <span className="text-xs text-white">1{i}</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="h-2 w-20 bg-zinc-800 rounded mb-1" />
-                      <div className="h-1.5 w-12 bg-zinc-800/50 rounded" />
-                    </div>
+                {scheduleLoading ? (
+                  <div className="py-8 text-center text-zinc-600 text-[10px] font-mono uppercase animate-pulse">
+                    Scanning Mission Logs...
                   </div>
-                ))}
-                <Button className="w-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-bold border border-blue-500/20 h-11">
-                  MANAGE SCHEDULE
-                </Button>
+                ) : scheduleEvents.length === 0 ? (
+                  <div className="py-8 text-center text-zinc-600 text-[10px] font-mono uppercase border border-dashed border-white/5 rounded-xl">
+                    No upcoming operations
+                  </div>
+                ) : (
+                  scheduleEvents.map(event => (
+                    <div
+                      key={event.id}
+                      className="flex gap-3 items-center p-3 rounded-xl bg-white/5 border border-white/5 hover:border-yellow-500/20 transition-all group"
+                    >
+                      <div className="h-10 w-10 rounded-lg bg-zinc-800 flex flex-col items-center justify-center font-bold border border-white/5">
+                        <span className="text-[8px] text-zinc-500 uppercase">
+                          {format(event.date.toDate(), 'MMM')}
+                        </span>
+                        <span className="text-xs text-white">
+                          {format(event.date.toDate(), 'd')}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[10px] font-bold text-white uppercase truncate">
+                          {event.title}
+                        </div>
+                        <div className="text-[8px] text-zinc-500 font-mono uppercase flex items-center gap-1">
+                          <span
+                            className={cn(
+                              'w-1 h-1 rounded-full',
+                              event.type === 'workout' ? 'bg-blue-500' : 'bg-yellow-500'
+                            )}
+                          />
+                          {event.type} — {format(event.date.toDate(), 'HH:mm')}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+
+                <Link to="/calendar" className="w-full block pt-2">
+                  <Button className="w-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-bold border border-blue-500/20 h-11 uppercase text-[10px] tracking-widest">
+                    MANAGE SCHEDULE
+                  </Button>
+                </Link>
                 <Link to="/trainer-library" className="block w-full">
                   <Button className="w-full bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 font-bold border border-yellow-500/20 h-11">
                     EXERCISE LIBRARY

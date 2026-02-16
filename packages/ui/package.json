@@ -10,6 +10,7 @@
     "./Card": "./components/ui/card.tsx",
     "./Input": "./components/ui/input.tsx",
     "./Progress": "./components/ui/progress.tsx",
+    "./Calendar": "./components/ui/calendar.tsx",
     "./utils": "./lib/utils.ts"
   },
   "scripts": {
@@ -25,6 +26,8 @@
     "@radix-ui/react-slot": "^1.2.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.563.0",
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {

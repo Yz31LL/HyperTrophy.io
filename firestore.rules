@@ -45,6 +45,15 @@ service cloud.firestore {
         allow read: if isOwner(userId) || isTrainerOf(userId);
         allow write: if isTrainerOf(userId);
       }
+
+      // Calendar Events
+      match /trainer_events/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /trainee_events/{docId} {
+        allow read: if isOwner(userId) || isTrainerOf(userId);
+        allow write: if isTrainerOf(userId);
+      }
     }
 
     // DAILY LOGS (Legacy or Shared)

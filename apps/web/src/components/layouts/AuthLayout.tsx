@@ -38,7 +38,7 @@ export function AuthLayout({ children, title, description }: AuthLayoutProps) {
       {/* FOOTER */}
       <div className="z-10 mt-8 text-zinc-600 text-sm relative">
         <Link to="/" className="hover:text-zinc-400 transition-colors">
-          &copy; 2024 HyperTrophy.io
+          &copy; 2026 HyperTrophy.io
         </Link>
       </div>
     </div>
